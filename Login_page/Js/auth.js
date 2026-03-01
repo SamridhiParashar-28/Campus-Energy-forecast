@@ -1,11 +1,10 @@
-// ==================== IndexedDB Local Database Setup ====================
+// ==================== IndexedDB Setup ====================
 const DB_NAME = "AppAuthDB";
 const DB_VERSION = 1;
 const STORE_NAME = "auth";
 
 let dbInstance = null;
 
-// Open / Create the local database
 function openDB() {
   return new Promise((resolve, reject) => {
     if (dbInstance) return resolve(dbInstance);
@@ -27,17 +26,16 @@ function openDB() {
   });
 }
 
-// Save login data (token + user info) into local database
 async function saveAuthData(token, user = {}) {
   const db = await openDB();
   return new Promise((resolve, reject) => {
     const tx = db.transaction(STORE_NAME, "readwrite");
     const store = tx.objectStore(STORE_NAME);
-    const request = store.put({ 
-      id: "current", 
-      token, 
-      user, 
-      timestamp: Date.now() 
+    const request = store.put({
+      id: "current",
+      token,
+      user,
+      timestamp: Date.now()
     });
 
     request.onsuccess = () => resolve();
@@ -45,7 +43,6 @@ async function saveAuthData(token, user = {}) {
   });
 }
 
-// Read data from local database (use this in dashboard.html)
 async function getAuthData() {
   const db = await openDB();
   return new Promise((resolve, reject) => {
@@ -58,7 +55,6 @@ async function getAuthData() {
   });
 }
 
-// Clear database (for logout)
 async function clearAuthData() {
   const db = await openDB();
   return new Promise((resolve, reject) => {
@@ -77,8 +73,14 @@ document.addEventListener("DOMContentLoaded", () => {
   const toggle = document.getElementById("togglePassword");
   const passwordInput = document.getElementById("password");
   const submitBtn = document.getElementById("submitBtn");
+  const errorEl = document.getElementById("error-message");
 
-  // Password show/hide
+  if (!form || !toggle || !passwordInput || !submitBtn) {
+    console.error("Login form elements missing");
+    return;
+  }
+
+  // Password visibility toggle
   toggle.addEventListener("click", () => {
     const type = passwordInput.type === "password" ? "text" : "password";
     passwordInput.type = type;
@@ -86,6 +88,7 @@ document.addEventListener("DOMContentLoaded", () => {
     toggle.classList.toggle("fa-eye-slash");
   });
 
+  // Form submit
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
@@ -93,10 +96,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const password = passwordInput.value;
 
     if (!username || !password) {
-      alert("Please fill both fields");
+      errorEl.textContent = "Please fill in both fields";
+      errorEl.style.display = "block";
       return;
     }
 
+    errorEl.style.display = "none";
     submitBtn.disabled = true;
     submitBtn.textContent = "Signing in...";
 
@@ -110,15 +115,16 @@ document.addEventListener("DOMContentLoaded", () => {
       const data = await response.json();
 
       if (response.ok && data.success) {
-        // Save to local database (IndexedDB)
         await saveAuthData(data.token || "demo-token", data.user || { username });
-
         window.location.href = "/dashboard.html";
       } else {
-        alert(data.message || "Login failed – check your credentials");
+        errorEl.textContent = data.message || "Login failed – check your credentials";
+        errorEl.style.display = "block";
       }
     } catch (err) {
-      alert("Cannot connect to server. Please try again.");
+      console.error(err);
+      errorEl.textContent = "Cannot connect to server. Please try again.";
+      errorEl.style.display = "block";
     } finally {
       submitBtn.disabled = false;
       submitBtn.textContent = "Sign in";
