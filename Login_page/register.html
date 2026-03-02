@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>REGISTER NEW USER</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+
+  <div class="login-card">
+    <div class="header">
+      <h1>NEW ACCOUNT</h1>
+      <p>ENTER YOUR DETAILS TO REGISTER</p>
+    </div>
+
+    <form class="form-body" id="registerForm">
+      <div class="input-group">
+        <label for="username">USERNAME</label>
+        <input 
+          type="text" 
+          id="username" 
+          placeholder="ENTER USERNAME" 
+          required 
+          autocomplete="username"
+          minlength="3"
+          maxlength="50"
+        >
+      </div>
+
+      <div class="input-group">
+        <label for="password">PASSWORD</label>
+        <input 
+          type="password" 
+          id="password" 
+          placeholder="••••••••" 
+          required 
+          autocomplete="new-password"
+          minlength="6"
+        >
+        <i class="fa-solid fa-eye password-toggle" id="togglePassword"></i>
+      </div>
+
+      <div class="input-group">
+        <label for="confirmPassword">CONFIRM PASSWORD</label>
+        <input 
+          type="password" 
+          id="confirmPassword" 
+          placeholder="••••••••" 
+          required 
+          autocomplete="new-password"
+        >
+      </div>
+
+      <!-- Error / success message -->
+      <div id="message" class="error" style="display:none; text-align:center; margin:16px 0;"></div>
+
+      <button type="submit" id="submitBtn">REGISTER</button>
+    </form>
+
+    <div class="footer">
+      Already have an account? <a href="index.html">SIGN IN</a>
+    </div>
+  </div>
+
+  <script src="js/register.js"></script>
+</body>
+</html>

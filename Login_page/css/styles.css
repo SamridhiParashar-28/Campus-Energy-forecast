@@ -208,3 +208,8 @@ button:disabled {
     font-size: 2.8rem;
   }
 }
+.success {
+  color: #00ff41 !important;
+  font-weight: bold;
+  text-shadow: 0 0 10px #00ff41;
+}
