@@ -69,7 +69,7 @@ document.addEventListener("DOMContentLoaded", () => {
           localStorage.setItem("username", username);
 
           alert("LOGIN SUCCESSFUL");
-          window.location.href = "dashboard/dashboard.html"; // corrected path
+          window.location.href = "Dashboard/dashboard.html"; // corrected path (case-sensitive)
         } else {
           errorEl.textContent = data.message || "Invalid username or password";
           errorEl.style.display = "block";
