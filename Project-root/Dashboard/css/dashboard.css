@@ -1,0 +1,122 @@
+.app-container {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.sidebar {
+  background: #000d00;
+  border-right: 3px solid var(--border);
+  padding: 2rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-header {
+  margin-bottom: 3rem;
+}
+
+.sidebar-header h2 {
+  font-size: 2.2rem;
+  letter-spacing: -2px;
+  text-shadow: 0 0 12px var(--glow);
+  margin-bottom: 0.4rem;
+}
+
+.subtitle {
+  font-size: 1.1rem;
+  opacity: 0.7;
+  letter-spacing: 1px;
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  padding: 1rem 1.2rem;
+  color: var(--text-light);
+  text-decoration: none;
+  font-size: 1.15rem;
+  border-radius: 6px;
+  transition: all 0.18s;
+}
+
+.nav-link i {
+  margin-right: 14px;
+  width: 22px;
+  text-align: center;
+}
+
+.nav-link:hover {
+  background: rgba(0, 255, 65, 0.08);
+  color: var(--accent);
+  box-shadow: 0 0 16px var(--glow);
+}
+
+.nav-link.active {
+  background: rgba(0, 255, 65, 0.12);
+  color: var(--accent);
+  border-left: 5px solid var(--accent);
+  margin-left: -5px;
+  box-shadow: 0 0 20px var(--glow);
+}
+
+.logout {
+  margin-top: auto;
+  color: #ff3366 !important;
+}
+
+.logout:hover {
+  background: rgba(255, 51, 102, 0.12);
+  color: #ff4d79 !important;
+}
+
+/* ── Main content ── */
+.main-content {
+  padding: 2.5rem 2rem;
+  overflow-y: auto;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2.5rem;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+}
+
+.page-header h1 {
+  font-size: 2.8rem;
+  letter-spacing: -1.5px;
+  text-shadow: 0 0 15px var(--glow);
+}
+
+.welcome p {
+  font-size: 1.3rem;
+  opacity: 0.85;
+}
+
+.last-update {
+  font-size: 1.1rem;
+  color: var(--text-light);
+}
+
+/* Mobile sidebar collapse */
+@media (max-width: 900px) {
+  .app-container {
+    grid-template-columns: 1fr;
+  }
+  .sidebar {
+    border-right: none;
+    border-bottom: 3px solid var(--border);
+    padding-bottom: 1.5rem;
+  }
+}
