@@ -19,12 +19,12 @@ function getDashboardRoot() {
   return path.substring(0, path.lastIndexOf('/') + 1);
 }
 
-// ── Find the public folder (for login redirect) ────────────
+// ── Sign out redirect → welcome page ──────────────────────
 function getPublicLogin() {
   const root = getDashboardRoot();
   // root is something like /Project-root/Dashboard/
-  // go one level up then into public/
-  return root + '../public/index.html';
+  // go one level up to Project-root/welcome.html
+  return root + '../welcome.html';
 }
 
 // ── Auth guard ─────────────────────────────────────────────
@@ -128,4 +128,27 @@ function exportCSV(rows, filename) {
   a.href = 'data:text/csv,' + encodeURIComponent(csv);
   a.download = filename;
   a.click();
+}
+
+// ── Budget helpers ─────────────────────────────────────────
+const BUDGET_KEY = 'ww_budgets';
+
+function getBudgets() {
+  try {
+    return JSON.parse(localStorage.getItem(BUDGET_KEY)) || {};
+  } catch { return {}; }
+}
+
+function saveBudget(key, value) {
+  const b = getBudgets();
+  b[key] = value;
+  localStorage.setItem(BUDGET_KEY, JSON.stringify(b));
+}
+
+function getBudgetStatus(spent, budget) {
+  if (!budget || budget <= 0) return null;
+  const pct = (spent / budget) * 100;
+  if (pct >= 100) return { label: 'OVER BUDGET', cls: 'badge-bad',  pct };
+  if (pct >= 80)  return { label: 'NEAR LIMIT',  cls: 'badge-warn', pct };
+  return               { label: 'WITHIN BUDGET', cls: 'badge-ok',   pct };
 }

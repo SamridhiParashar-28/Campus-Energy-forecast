@@ -177,14 +177,12 @@
       <div class="chart-wrap"><canvas id="mainChart"></canvas></div>
     </div>
     <div class="card">
-      <div class="card-label"><i class="fas fa-file-invoice-dollar"></i> Billing Summary (@ ₹8.5/kWh)</div>
-      <div class="billing-row"><span>Girls Hostel</span><strong>&#8377; 5,095</strong></div>
-      <div class="billing-row"><span>Boys Hostel</span><strong>&#8377; 5,095</strong></div>
-      <div class="billing-row"><span>Academic Blk 1</span><strong>&#8377; 5,286</strong></div>
-      <div class="billing-row"><span>Academic Blk 2</span><strong>&#8377; 10,496</strong></div>
-      <div class="billing-row" style="border:none"><span>Admin Block</span><strong>&#8377; 9,781</strong></div>
-      <div class="billing-row billing-total"><span>Campus Total</span><strong>&#8377; 35,753</strong></div>
-      <span class="badge badge-ok" style="margin-top:8px">WITHIN BUDGET</span>
+      <div class="card-label"><i class="fas fa-file-invoice-dollar"></i> Billing Summary (@ &#8377;8.5/kWh)</div>
+      <div id="dashBillingRows"></div>
+      <div style="margin-top:8px" id="dashBudgetBadge"></div>
+      <button class="btn btn-full" style="margin-top:10px;font-size:0.65rem" onclick="navigate('billing')">
+        <i class="fas fa-sliders"></i> &nbsp;Set Block Budgets
+      </button>
     </div>
   </div>
 </main>
@@ -215,7 +213,37 @@ document.addEventListener('DOMContentLoaded', () => {
     dataset('Academic 2',   ab2, 'rgb(255,170,0)'),
     dataset('Admin',        adm, 'rgb(255,100,50)')
   ]);
+
+  buildDashBilling();
 });
+
+function buildDashBilling() {
+  const RATE = 8.5;
+  const blocks = ['G-H','B-H','AB1','AB2','ADMIN'];
+  const saved = getBudgets();
+  let grand = 0;
+  const rows = blocks.map(b => {
+    const cost = +(WW.blocks[b].total * RATE).toFixed(2);
+    grand += cost;
+    const budget = saved[b];
+    const status = getBudgetStatus(cost, budget);
+    const indicator = status
+      ? ` <span style="font-size:0.6rem;color:${status.pct>=100?'var(--danger)':status.pct>=80?'var(--warn)':'var(--accent2)'}">${status.pct.toFixed(0)}%</span>`
+      : '';
+    return `<div class="billing-row"><span>${WW.blocks[b].label}</span><strong>&#8377;${cost.toLocaleString('en-IN')}${indicator}</strong></div>`;
+  });
+  rows.push(`<div class="billing-row billing-total"><span>Campus Total</span><strong>&#8377;${grand.toLocaleString('en-IN',{maximumFractionDigits:0})}</strong></div>`);
+  document.getElementById('dashBillingRows').innerHTML = rows.join('');
+
+  const totalBudget = saved['TOTAL'];
+  const totalStatus = getBudgetStatus(grand, totalBudget);
+  const badge = document.getElementById('dashBudgetBadge');
+  if (badge) {
+    badge.innerHTML = totalStatus
+      ? `<span class="badge ${totalStatus.cls}">${totalStatus.label} &mdash; ${totalStatus.pct.toFixed(1)}%</span>`
+      : `<span style="font-size:0.65rem;color:var(--text3)">No campus budget set &mdash; <a onclick="navigate('billing')" style="color:var(--accent3);cursor:pointer">Set now</a></span>`;
+  }
+}
 
 function runForecast() {
   const btn = document.querySelector('.btn-full');
