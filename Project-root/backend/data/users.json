@@ -13,5 +13,10 @@
     "username": "sam2",
     "password": "$2b$12$0peZZaidqlJiXq77p4Urp.I/s10v/vxEI2Ot0q7ZI84kOHBu64uZm",
     "createdAt": "2026-03-19T20:19:15.332Z"
+  },
+  {
+    "username": "pikachu",
+    "password": "$2b$12$jtZ1Xf25Q3VdcE2FoZD4te3QmryoO8gyjsPSou8W9FlDRvrQdmeSu",
+    "createdAt": "2026-03-19T21:44:24.930Z"
   }
 ]

@@ -1,9 +1,4 @@
 document.addEventListener("DOMContentLoaded", () => {
-  // If already logged in, skip straight to the dashboard
-  if (localStorage.getItem("isLoggedIn") === "true") {
-    window.location.replace("../Dashboard/dashboard.html");
-    return;
-  }
 
   const form        = document.getElementById("loginForm");
   const toggle      = document.getElementById("togglePassword");
