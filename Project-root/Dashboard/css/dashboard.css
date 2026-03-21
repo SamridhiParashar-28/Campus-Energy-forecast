@@ -1,0 +1,209 @@
+/* ── Layout ─────────────────────────────────────────────── */
+.app-container {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* ── Sidebar ─────────────────────────────────────────────── */
+.sidebar {
+  background: #000d00;
+  border-right: 3px solid var(--border);
+  padding: 2rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+}
+
+.sidebar-header { margin-bottom: 3rem; }
+
+.sidebar-header h2 {
+  font-size: 2.2rem;
+  letter-spacing: -2px;
+  text-shadow: 0 0 12px var(--glow);
+  margin-bottom: 0.4rem;
+}
+
+.subtitle {
+  font-size: 0.95rem;
+  opacity: 0.7;
+  letter-spacing: 1px;
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  padding: 0.85rem 1.2rem;
+  color: var(--text-light);
+  text-decoration: none;
+  font-size: 1rem;
+  border-radius: 6px;
+  transition: all 0.18s;
+  border-left: 5px solid transparent;
+}
+
+.nav-link i {
+  margin-right: 12px;
+  width: 20px;
+  text-align: center;
+}
+
+.nav-link:hover {
+  background: rgba(0, 255, 65, 0.08);
+  color: var(--accent);
+}
+
+.nav-link.active {
+  background: rgba(0, 255, 65, 0.12);
+  color: var(--accent);
+  border-left-color: var(--accent);
+}
+
+.logout { margin-top: auto; color: #ff3366 !important; }
+.logout:hover { background: rgba(255, 51, 102, 0.12); }
+
+/* ── Main content ────────────────────────────────────────── */
+.main-content {
+  padding: 2.5rem 2rem;
+  overflow-y: auto;
+}
+
+/* ── Page header ─────────────────────────────────────────── */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 2.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.page-header h1 {
+  font-size: 2.4rem;
+  letter-spacing: -1.5px;
+  text-shadow: 0 0 15px var(--glow);
+  margin-bottom: 0.3rem;
+}
+
+.welcome p { font-size: 1rem; opacity: 0.8; }
+
+.last-update {
+  font-size: 0.9rem;
+  color: var(--text-light);
+  padding-top: 0.5rem;
+}
+
+/* ── Stats cards grid ────────────────────────────────────── */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2.5rem;
+}
+
+.card {
+  background: var(--card-bg);
+  border: 2px solid var(--border);
+  padding: 1.5rem;
+  border-radius: 4px;
+  transition: box-shadow 0.2s;
+}
+
+.card:hover {
+  box-shadow: 0 0 18px var(--glow);
+}
+
+.card h3 {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--text-light);
+  margin-bottom: 0.8rem;
+}
+
+.card .value {
+  font-size: 1.8rem;
+  font-weight: 700;
+  letter-spacing: -1px;
+  color: var(--accent);
+  margin-bottom: 0.4rem;
+}
+
+.card .change {
+  font-size: 0.85rem;
+  color: var(--text-light);
+  opacity: 0.8;
+}
+
+.card .small-text {
+  font-size: 0.8rem;
+  color: var(--text-light);
+  opacity: 0.65;
+}
+
+/* Alert card */
+.alert-card {
+  border-color: #ff3366;
+  background: rgba(255, 51, 102, 0.06);
+}
+
+.alert-card h3 { color: #ff3366; }
+.alert-card p  { font-size: 0.95rem; color: #ff6688; }
+
+/* ── Chart section ───────────────────────────────────────── */
+.chart-section {
+  background: var(--card-bg);
+  border: 2px solid var(--border);
+  padding: 1.5rem;
+  border-radius: 4px;
+}
+
+.chart-section h2 {
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--text-light);
+  margin-bottom: 1.2rem;
+}
+
+.chart-container {
+  position: relative;
+  height: 280px;
+  width: 100%;
+}
+
+/* ── Responsive ──────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .app-container {
+    grid-template-columns: 1fr;
+  }
+  .sidebar {
+    position: static;
+    height: auto;
+    border-right: none;
+    border-bottom: 3px solid var(--border);
+  }
+  .stats-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+  .page-header h1 {
+    font-size: 1.8rem;
+  }
+}
