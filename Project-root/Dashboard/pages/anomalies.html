@@ -1,0 +1,65 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>WattWise – Anomalies</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"/>
+<link rel="stylesheet" href="../css/shared.css"/>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head><body>
+<aside class="sidebar"></aside>
+<main class="main">
+  <div class="topbar">
+    <div class="topbar-left"><h2>ANOMALY DETECTION</h2><p>Unusual consumption patterns — Jan 06–12, 2025</p></div>
+  </div>
+  <p class="section-title">Summary</p>
+  <div class="grid-3">
+    <div class="card" style="border-color:var(--danger)"><div class="card-label" style="color:var(--danger)"><i class="fas fa-circle-exclamation"></i> High Severity</div><div class="card-value" style="color:var(--danger)">2</div><div class="card-sub">Require immediate review</div></div>
+    <div class="card" style="border-color:var(--warn)"><div class="card-label" style="color:var(--warn)"><i class="fas fa-triangle-exclamation"></i> Medium</div><div class="card-value" style="color:var(--warn)">3</div><div class="card-sub">Monitor closely</div></div>
+    <div class="card"><div class="card-label"><i class="fas fa-circle-check"></i> Normal</div><div class="card-value">3</div><div class="card-sub">Blocks within range</div></div>
+  </div>
+
+  <p class="section-title">Detected Anomalies — From Dataset</p>
+  <div class="card" style="margin-bottom:1rem">
+    <div class="anomaly-item" style="border-left-color:var(--danger);margin-bottom:8px">
+      <i class="fas fa-circle-exclamation" style="color:var(--danger)"></i>
+      <span><strong>AB2 — BigLab PCs:</strong> 225 kWh/day — highest single appliance in dataset. PCs alone = 675 kWh for the week (54.6% of AB2 total).</span>
+      <small style="color:var(--danger)">HIGH</small>
+    </div>
+    <div class="anomaly-item" style="border-left-color:var(--danger);margin-bottom:8px">
+      <i class="fas fa-circle-exclamation" style="color:var(--danger)"></i>
+      <span><strong>ADMIN — ACs:</strong> 828 kWh week total. Air conditioning = 71.9% of entire Admin Block consumption.</span>
+      <small style="color:var(--danger)">HIGH</small>
+    </div>
+    <div class="anomaly-item" style="border-left-color:var(--warn);margin-bottom:8px">
+      <i class="fas fa-triangle-exclamation" style="color:var(--warn)"></i>
+      <span><strong>AB1/AB2/ADMIN:</strong> Zero consumption on Sat (Jan 11) and Sun (Jan 12) — confirm this is expected weekend shutdown.</span>
+      <small style="color:var(--warn)">MEDIUM</small>
+    </div>
+    <div class="anomaly-item" style="border-left-color:var(--warn);margin-bottom:8px">
+      <i class="fas fa-triangle-exclamation" style="color:var(--warn)"></i>
+      <span><strong>G-H and B-H:</strong> Identical consumption every single day (85.64 kWh). This may indicate metering issue — real data unlikely to be perfectly flat.</span>
+      <small style="color:var(--warn)">MEDIUM</small>
+    </div>
+    <div class="anomaly-item" style="border-left-color:var(--warn)">
+      <i class="fas fa-triangle-exclamation" style="color:var(--warn)"></i>
+      <span><strong>G-H Geyser + AC:</strong> Each 252 kWh/week. High energy appliances running 9h/day — consider time-of-use policy.</span>
+      <small style="color:var(--warn)">MEDIUM</small>
+    </div>
+  </div>
+
+  <p class="section-title">Consumption Spike Chart</p>
+  <div class="card"><div class="chart-wrap"><canvas id="anomChart"></canvas></div></div>
+</main>
+<script src="../js/shared.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  initSidebar('anomalies');
+  lineChart('anomChart', WW.dates, [
+    dataset('AB2 (highest)', WW.blocks['AB2'].daily, 'rgb(255,100,50)'),
+    dataset('ADMIN',         WW.blocks['ADMIN'].daily, 'rgb(255,170,0)'),
+    dataset('AB1',           WW.blocks['AB1'].daily,  'rgb(0,170,255)'),
+    dataset('G-H',           WW.blocks['G-H'].daily,  'rgb(0,255,65)'),
+    dataset('B-H',           WW.blocks['B-H'].daily,  'rgb(0,200,50)')
+  ]);
+});
+</script>
+</body></html>

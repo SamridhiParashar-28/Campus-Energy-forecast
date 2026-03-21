@@ -1,0 +1,4 @@
+Project-root/node_modules/
+Project-root/backend/data/users.json
+.env
+*.env.local

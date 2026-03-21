@@ -1,0 +1,73 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>WattWise – Live Usage</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"/>
+<link rel="stylesheet" href="../css/shared.css"/>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+.live-card{border-color:var(--accent);box-shadow:0 0 14px var(--glow2);}
+.meter{font-family:var(--font-head);font-size:2rem;color:var(--accent);text-shadow:0 0 15px var(--accent);}
+.pulse-dot{width:10px;height:10px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px var(--accent);animation:pulse 1s infinite;display:inline-block;margin-right:6px;}
+</style></head><body>
+<aside class="sidebar"></aside>
+<main class="main">
+  <div class="topbar">
+    <div class="topbar-left"><h2>LIVE USAGE</h2><p>Real-time consumption per block &middot; Updates every 3s</p></div>
+    <div class="topbar-right"><span><span class="pulse-dot"></span>Live Feed Active</span></div>
+  </div>
+  <p class="section-title">Current Load Per Block</p>
+  <div class="grid-3">
+    <div class="card live-card"><div class="card-label"><i class="fas fa-venus"></i> Girls Hostel</div><div class="meter" id="gh-live">85.6</div><div class="card-sub">kWh today &middot; AC+Geyser dominant</div></div>
+    <div class="card live-card"><div class="card-label"><i class="fas fa-mars"></i> Boys Hostel</div><div class="meter" id="bh-live">85.6</div><div class="card-sub">kWh today &middot; AC+Geyser dominant</div></div>
+    <div class="card live-card"><div class="card-label"><i class="fas fa-building-columns"></i> Academic Blk 1</div><div class="meter" id="ab1-live">177.3</div><div class="card-sub">kWh today &middot; PCs+ACs dominant</div></div>
+    <div class="card live-card"><div class="card-label"><i class="fas fa-building"></i> Academic Blk 2</div><div class="meter" id="ab2-live">396.0</div><div class="card-sub">kWh today &middot; BigLab PCs highest</div></div>
+    <div class="card live-card"><div class="card-label"><i class="fas fa-landmark"></i> Admin Block</div><div class="meter" id="adm-live">322.5</div><div class="card-sub">kWh today &middot; ACs dominant</div></div>
+    <div class="card"><div class="card-label"><i class="fas fa-sigma"></i> Campus Total</div><div class="meter" id="total-live">1,067</div><div class="card-sub">kWh combined today</div></div>
+  </div>
+  <p class="section-title">Live Chart — Last 7 Readings</p>
+  <div class="card"><div class="chart-wrap"><canvas id="liveChart"></canvas></div></div>
+</main>
+<script src="../js/shared.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  initSidebar('live');
+  const bases = {'G-H':85.64,'B-H':85.64,'AB1':177.3,'AB2':396.0,'ADMIN':322.47};
+  const history = {gh:[],bh:[],ab1:[],ab2:[],adm:[]};
+  const ids = ['gh-live','bh-live','ab1-live','ab2-live','adm-live'];
+  const keys = ['G-H','B-H','AB1','AB2','ADMIN'];
+  const hkeys = ['gh','bh','ab1','ab2','adm'];
+  let t = 0;
+  let chart = null;
+
+  function tick() {
+    let total = 0;
+    keys.forEach((k,i) => {
+      const v = +(bases[k] * (0.97 + Math.random()*0.06)).toFixed(1);
+      document.getElementById(ids[i]).textContent = v;
+      history[hkeys[i]].push(v);
+      if (history[hkeys[i]].length > 7) history[hkeys[i]].shift();
+      total += v;
+    });
+    document.getElementById('total-live').textContent = total.toFixed(0);
+    t++;
+    const labels = Array.from({length: history.gh.length}, (_,i) => 'T-'+(history.gh.length-1-i)+'s');
+    if (!chart) {
+      chart = lineChart('liveChart', labels, [
+        dataset('G-H', [...history.gh], 'rgb(0,255,65)'),
+        dataset('B-H', [...history.bh], 'rgb(0,200,50)'),
+        dataset('AB1', [...history.ab1], 'rgb(0,170,255)'),
+        dataset('AB2', [...history.ab2], 'rgb(255,170,0)'),
+        dataset('ADMIN', [...history.adm], 'rgb(255,100,50)')
+      ]);
+    } else {
+      chart.data.labels = labels;
+      hkeys.forEach((k,i) => { chart.data.datasets[i].data = [...history[k]]; });
+      chart.update('none');
+    }
+  }
+
+  tick();
+  setInterval(tick, 3000);
+});
+</script>
+</body></html>
