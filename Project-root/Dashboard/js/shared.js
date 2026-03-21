@@ -22,8 +22,8 @@ function getDashboardRoot() {
 // ── Sign out redirect → welcome page ──────────────────────
 function getPublicLogin() {
   const root = getDashboardRoot();
-  // root is something like /Project-root/Dashboard/
-  // go one level up to Project-root/welcome.html
+  // getDashboardRoot() always returns .../Dashboard/
+  // welcome.html is one level up at Project-root/
   return root + '../welcome.html';
 }
 
@@ -36,14 +36,36 @@ function authGuard() {
   return true;
 }
 
+// ── Role helpers ───────────────────────────────────────────
+function isAdmin() {
+  return localStorage.getItem('role') === 'admin';
+}
+
+function getRoleBadge() {
+  return isAdmin()
+    ? '<span style="font-size:0.58rem;padding:1px 7px;background:rgba(0,255,65,0.12);border:1px solid var(--accent3);color:var(--accent2);letter-spacing:2px;">ADMIN</span>'
+    : '<span style="font-size:0.58rem;padding:1px 7px;background:rgba(0,170,255,0.08);border:1px solid #004466;color:#0099cc;letter-spacing:2px;">VIEW ONLY</span>';
+}
+
 // ── Sidebar init ───────────────────────────────────────────
 function initSidebar(activeId) {
   if (!authGuard()) return;
   const u = localStorage.getItem('username') || 'Admin';
   const avatarEl = document.getElementById('avatarEl');
   const userEl   = document.getElementById('sidebarUser');
+  const roleEl   = document.getElementById('sidebarRole');
   if (avatarEl) avatarEl.textContent = u[0].toUpperCase();
   if (userEl)   userEl.textContent   = u;
+  if (roleEl)   roleEl.innerHTML     = getRoleBadge();
+
+  if (!isAdmin()) {
+    document.querySelectorAll('.nav-item[data-page="upload"], .nav-item[data-page="export"]')
+      .forEach(el => {
+        el.style.opacity = '0.35';
+        el.style.pointerEvents = 'none';
+        el.title = 'Admin access required';
+      });
+  }
 
   document.querySelectorAll('.nav-item[data-page]').forEach(el => {
     el.classList.toggle('active', el.dataset.page === activeId);

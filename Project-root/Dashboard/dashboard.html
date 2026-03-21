@@ -45,7 +45,7 @@
     <div class="avatar" id="avatarEl">—</div>
     <div class="sidebar-user-info">
       <span id="sidebarUser">—</span>
-      <small>Campus Admin</small>
+      <small id="sidebarRole">—</small>
     </div>
   </div>
   <nav class="sidebar-nav">
@@ -199,6 +199,19 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('topUser').textContent = u;
   document.getElementById('dateStr').textContent = new Date().toLocaleDateString('en-IN',{dateStyle:'medium'});
   document.getElementById('lastRun').textContent = new Date().toLocaleTimeString('en-IN',{timeStyle:'short'});
+
+  // Role-based UI restrictions
+  if (!isAdmin()) {
+    const uploadCard = document.querySelector('.upload-card');
+    if (uploadCard) {
+      uploadCard.style.opacity = '0.3';
+      uploadCard.style.pointerEvents = 'none';
+      uploadCard.querySelector('strong').textContent = 'Admin Only';
+      uploadCard.querySelector('p').textContent = 'Upload requires Admin access';
+    }
+    const budgetBtn = document.querySelector('button.btn-full[onclick*="billing"]');
+    if (budgetBtn) budgetBtn.style.display = 'none';
+  }
 
   const gh  = WW.blocks['G-H'].daily;
   const bh  = WW.blocks['B-H'].daily;

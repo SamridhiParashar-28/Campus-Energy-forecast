@@ -59,6 +59,7 @@ app.post('/register', async (req, res) => {
   try {
     const username = sanitise(req.body.username);
     const password = sanitise(req.body.password);
+    const requestedRole = sanitise(req.body.role || 'viewer');
 
     if (!username || !password) {
       return res.status(400).json({ success: false, message: 'Username and password are required.' });
@@ -70,17 +71,20 @@ app.post('/register', async (req, res) => {
       return res.status(400).json({ success: false, message: 'Password must be at least 6 characters.' });
     }
 
+    // Only allow 'admin' or 'viewer' — anything else defaults to viewer
+    const role = requestedRole === 'admin' ? 'admin' : 'viewer';
+
     const users = loadUsers();
     if (users.some(u => u.username.toLowerCase() === username.toLowerCase())) {
       return res.status(409).json({ success: false, message: 'Username already taken.' });
     }
 
     const hashedPassword = await bcrypt.hash(password, 12);
-    users.push({ username, password: hashedPassword, createdAt: new Date().toISOString() });
+    users.push({ username, password: hashedPassword, role, createdAt: new Date().toISOString() });
     saveUsers(users);
 
-    console.log('Registered:', username);
-    return res.status(201).json({ success: true, message: 'Account created successfully.', username });
+    console.log('Registered:', username, '| Role:', role);
+    return res.status(201).json({ success: true, message: 'Account created successfully.', username, role });
   } catch (err) {
     console.error('REGISTER ERROR:', err);
     return res.status(500).json({ success: false, message: 'Server error. Please try again.' });
@@ -109,11 +113,64 @@ app.post('/login', async (req, res) => {
     }
 
     const token = 'fake-jwt-' + Date.now() + '-' + Math.random().toString(36).slice(2);
-    return res.json({ success: true, message: 'Login successful.', username: user.username, token });
+    const role  = user.role || 'viewer';
+    return res.json({ success: true, message: 'Login successful.', username: user.username, token, role });
   } catch (err) {
     console.error('LOGIN ERROR:', err);
     return res.status(500).json({ success: false, message: 'Server error. Please try again.' });
   }
+});
+
+// ── Admin: list all users (no passwords) ──────────────────
+app.get('/users', (req, res) => {
+  const token = (req.headers.authorization || '').replace('Bearer ', '');
+  if (!token) return res.status(401).json({ success: false, message: 'Unauthorised.' });
+
+  const users = loadUsers();
+  const safe  = users.map(u => ({ username: u.username, role: u.role || 'viewer', createdAt: u.createdAt }));
+  return res.json({ success: true, users: safe });
+});
+
+// ── Admin: update a user's role ────────────────────────────
+app.post('/users/role', (req, res) => {
+  const token    = (req.headers.authorization || '').replace('Bearer ', '');
+  const target   = sanitise(req.body.username);
+  const newRole  = sanitise(req.body.role);
+
+  if (!token)  return res.status(401).json({ success: false, message: 'Unauthorised.' });
+  if (!target) return res.status(400).json({ success: false, message: 'Username required.' });
+  if (!['admin','viewer'].includes(newRole))
+    return res.status(400).json({ success: false, message: 'Role must be admin or viewer.' });
+
+  const users = loadUsers();
+  const idx   = users.findIndex(u => u.username.toLowerCase() === target.toLowerCase());
+  if (idx === -1) return res.status(404).json({ success: false, message: 'User not found.' });
+
+  users[idx].role = newRole;
+  saveUsers(users);
+  console.log('Role updated:', target, '->', newRole);
+  return res.json({ success: true, message: `${target} is now ${newRole}.` });
+});
+
+// ── Admin: delete a user ───────────────────────────────────
+app.post('/users/delete', (req, res) => {
+  const token  = (req.headers.authorization || '').replace('Bearer ', '');
+  const target = sanitise(req.body.username);
+  const caller = sanitise(req.body.caller);
+
+  if (!token)  return res.status(401).json({ success: false, message: 'Unauthorised.' });
+  if (!target) return res.status(400).json({ success: false, message: 'Username required.' });
+  if (target.toLowerCase() === caller.toLowerCase())
+    return res.status(400).json({ success: false, message: 'You cannot delete your own account.' });
+
+  const users   = loadUsers();
+  const filtered = users.filter(u => u.username.toLowerCase() !== target.toLowerCase());
+  if (filtered.length === users.length)
+    return res.status(404).json({ success: false, message: 'User not found.' });
+
+  saveUsers(filtered);
+  console.log('User deleted:', target);
+  return res.json({ success: true, message: `${target} deleted.` });
 });
 
 app.get('/health', (_req, res) => {

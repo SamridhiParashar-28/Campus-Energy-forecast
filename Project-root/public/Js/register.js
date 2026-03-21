@@ -60,10 +60,37 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       if (res.ok && data.success) {
-        showMessage("Account created! Redirecting to login…", "success");
-        setTimeout(() => {
-          window.location.replace("index.html");
-        }, 1500);
+        showMessage("Account created! Signing you in…", "success");
+
+        try {
+          const loginRes  = await fetch("http://localhost:5000/login", {
+            method:  "POST",
+            headers: { "Content-Type": "application/json" },
+            body:    JSON.stringify({ username, password: passValue })
+          });
+          const loginData = await loginRes.json();
+
+          if (loginRes.ok && loginData.success) {
+            localStorage.clear();
+            localStorage.setItem("isLoggedIn", "true");
+            localStorage.setItem("username",   loginData.username);
+            localStorage.setItem("token",      loginData.token);
+            localStorage.setItem("role",       loginData.role || "viewer");
+
+            showMessage("All done! Going to dashboard…", "success");
+            // public/Js/ → up to public/ → up to Project-root/ → Dashboard/dashboard.html
+            setTimeout(() => {
+              window.location.replace("../../Dashboard/dashboard.html");
+            }, 1000);
+          } else {
+            showMessage("Account created! Please sign in.", "success");
+            // public/Js/ → up to public/ → index.html
+            setTimeout(() => { window.location.replace("../index.html"); }, 1500);
+          }
+        } catch {
+          showMessage("Account created! Please sign in.", "success");
+          setTimeout(() => { window.location.replace("../index.html"); }, 1500);
+        }
       } else {
         showMessage(data.message || "Registration failed. Please try again.", "error");
       }

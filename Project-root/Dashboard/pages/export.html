@@ -13,7 +13,7 @@
     <div class="avatar" id="avatarEl">—</div>
     <div class="sidebar-user-info">
       <span id="sidebarUser">—</span>
-      <small>Campus Admin</small>
+      <small id="sidebarRole">—</small>
     </div>
   </div>
   <nav class="sidebar-nav">
@@ -72,7 +72,30 @@
 </main>
 <script src="../js/shared.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded', () => { initSidebar('export'); });
+document.addEventListener('DOMContentLoaded', () => {
+  initSidebar('export');
+
+  if (!isAdmin()) {
+    document.querySelector('.main').innerHTML = `
+      <div class="topbar">
+        <div class="topbar-left">
+          <h2><i class="fas fa-lock" style="color:var(--danger);margin-right:8px"></i>ACCESS RESTRICTED</h2>
+          <p>Admin role required to export reports</p>
+        </div>
+      </div>
+      <div class="card" style="max-width:520px;margin-top:1rem;border-color:var(--danger);background:rgba(255,51,85,0.04)">
+        <div class="card-label" style="color:var(--danger)"><i class="fas fa-shield-halved"></i> Viewer Account</div>
+        <p style="font-size:0.82rem;color:var(--text3);margin-top:10px;line-height:1.8">
+          Your account has <strong style="color:#0099cc">View Only</strong> access.<br>
+          Exporting reports requires an <strong style="color:var(--accent2)">Admin</strong> account.<br><br>
+          Contact your administrator to upgrade your role.
+        </p>
+        <button class="btn btn-full" style="margin-top:14px;border-color:var(--accent3)" onclick="navigate('dashboard')">
+          <i class="fas fa-gauge-high"></i> &nbsp;Back to Dashboard
+        </button>
+      </div>`;
+    return;
+  }
 
 function msg(t) { document.getElementById('exportMsg').textContent = '✓ ' + t + ' downloaded.'; }
 

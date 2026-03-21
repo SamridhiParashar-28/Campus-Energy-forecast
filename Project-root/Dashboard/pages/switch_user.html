@@ -1,9 +1,46 @@
 <!DOCTYPE html><html lang="en"><head>
 <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>WattWise – Switch User</title>
+<title>WattWise – User Management</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"/>
 <link rel="stylesheet" href="../css/shared.css"/>
-</head><body>
+<style>
+  .user-table { width:100%; border-collapse:collapse; font-size:0.72rem; margin-top:10px; }
+  .user-table th { text-align:left; padding:8px 12px; color:var(--text3); font-size:0.6rem; letter-spacing:2px; text-transform:uppercase; border-bottom:1px solid var(--border); }
+  .user-table td { padding:10px 12px; border-bottom:1px solid rgba(0,85,26,0.4); vertical-align:middle; }
+  .user-table tr:hover td { background:var(--glow2); }
+
+  .role-badge-admin  { display:inline-block; padding:2px 10px; font-size:0.58rem; letter-spacing:2px; background:rgba(0,255,65,0.12); border:1px solid var(--accent3); color:var(--accent2); }
+  .role-badge-viewer { display:inline-block; padding:2px 10px; font-size:0.58rem; letter-spacing:2px; background:rgba(0,170,255,0.08); border:1px solid #004466; color:#0099cc; }
+  .role-badge-you    { display:inline-block; padding:2px 8px; font-size:0.56rem; letter-spacing:1px; background:rgba(255,170,0,0.08); border:1px solid #664400; color:var(--warn); margin-left:6px; }
+
+  .action-btn { padding:4px 12px; font-family:var(--font-main); font-size:0.62rem; letter-spacing:1px; cursor:pointer; border:1px solid; transition:all 0.18s; background:transparent; margin-left:6px; }
+  .btn-promote { border-color:var(--accent3); color:var(--accent2); }
+  .btn-promote:hover { background:rgba(0,255,65,0.08); border-color:var(--accent); color:var(--accent); }
+  .btn-demote  { border-color:#004466; color:#0099cc; }
+  .btn-demote:hover  { background:rgba(0,170,255,0.08); border-color:#0077aa; }
+  .btn-delete  { border-color:#551122; color:var(--danger); }
+  .btn-delete:hover  { background:rgba(255,51,85,0.08); border-color:var(--danger); }
+  .btn-disabled { opacity:0.28; pointer-events:none; cursor:default; }
+
+  .toast { position:fixed; bottom:2rem; right:2rem; padding:10px 20px; font-size:0.75rem; letter-spacing:1px; z-index:9999; border:1px solid; animation:slideIn 0.25s ease; }
+  .toast-ok  { background:#001a00; border-color:var(--accent3); color:var(--accent2); }
+  .toast-err { background:#1a0008; border-color:var(--danger);  color:var(--danger);  }
+  @keyframes slideIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+
+  .confirm-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.78); z-index:8000; display:flex; align-items:center; justify-content:center; }
+  .confirm-box { background:var(--card); border:1px solid var(--danger); padding:2rem 2.5rem; max-width:400px; width:90%; text-align:center; }
+  .confirm-box h3 { font-family:var(--font-head); font-size:1rem; color:var(--danger); margin-bottom:0.8rem; letter-spacing:2px; }
+  .confirm-box p  { font-size:0.78rem; color:var(--text3); margin-bottom:1.5rem; line-height:1.7; }
+  .confirm-btns { display:flex; gap:0.8rem; justify-content:center; }
+
+  .stat-row { display:flex; gap:1rem; margin-bottom:1.2rem; flex-wrap:wrap; }
+  .stat-pill { padding:6px 16px; background:var(--card); border:1px solid var(--border); font-size:0.68rem; color:var(--text3); letter-spacing:1px; }
+  .stat-pill strong { color:var(--accent2); margin-left:6px; }
+
+  .viewer-notice { padding:10px 16px; background:rgba(0,170,255,0.06); border:1px solid #004466; font-size:0.72rem; color:#0099cc; letter-spacing:1px; margin-bottom:1.2rem; }
+</style>
+</head>
+<body>
 <aside class="sidebar">
   <div class="sidebar-logo">
     <h1>WATT<br>WISE</h1>
@@ -13,7 +50,7 @@
     <div class="avatar" id="avatarEl">—</div>
     <div class="sidebar-user-info">
       <span id="sidebarUser">—</span>
-      <small>Campus Admin</small>
+      <small id="sidebarRole">—</small>
     </div>
   </div>
   <nav class="sidebar-nav">
@@ -35,45 +72,281 @@
     <a class="nav-item" data-page="block_ab2"><i class="fas fa-building"></i> Academic Blk 2</a>
     <a class="nav-item" data-page="block_adm"><i class="fas fa-landmark"></i> Admin Block</a>
     <div class="nav-section-label">Account</div>
-    <a class="nav-item" data-page="switch_user"><i class="fas fa-user-plus"></i> Switch User</a>
+    <a class="nav-item" data-page="switch_user"><i class="fas fa-users-gear"></i> User Management</a>
   </nav>
   <div class="sidebar-bottom">
     <a class="nav-item danger" id="logoutBtn"><i class="fas fa-right-from-bracket"></i> Sign Out</a>
   </div>
 </aside>
+
 <main class="main">
   <div class="topbar">
-    <div class="topbar-left"><h2>SWITCH USER</h2><p>Sign in as a different account</p></div>
-  </div>
-  <p class="section-title">Current Session</p>
-  <div class="card" style="max-width:400px;margin-bottom:1.5rem">
-    <div class="card-label"><i class="fas fa-user"></i> Logged in as</div>
-    <div class="card-value" style="font-size:1.2rem" id="currentUserDisp">—</div>
-    <div class="card-sub">Campus Admin</div>
-    <button class="btn btn-full" style="margin-top:12px;border-color:var(--danger);color:var(--danger)" onclick="doLogout()">
-      <i class="fas fa-right-from-bracket"></i> Sign Out
-    </button>
-  </div>
-  <p class="section-title">Sign In as Different User</p>
-  <div class="card" style="max-width:400px">
-    <div class="card-label"><i class="fas fa-user-plus"></i> Switch Account</div>
-    <div style="margin-top:10px;font-size:0.78rem;color:var(--text3);margin-bottom:12px">
-      This will sign you out of the current session and take you to the login page.
+    <div class="topbar-left">
+      <h2>USER MANAGEMENT</h2>
+      <p>Manage roles &amp; accounts &middot; Session: <strong id="currentUserDisp" style="color:var(--accent2)">—</strong></p>
     </div>
-    <button class="btn btn-full" onclick="doLogout()">
-      <i class="fas fa-arrow-right-to-bracket"></i> Go to Login Page
+    <div class="topbar-right">
+      <button class="btn" id="refreshBtn" onclick="loadUsers()"><i class="fas fa-rotate"></i> Refresh</button>
+    </div>
+  </div>
+
+  <!-- Current session card -->
+  <p class="section-title">Current Session</p>
+  <div class="card" style="max-width:420px;margin-bottom:1.5rem">
+    <div class="card-label"><i class="fas fa-user-circle"></i> Signed in as</div>
+    <div class="card-value" style="font-size:1.2rem;margin-top:4px" id="sessionUser">—</div>
+    <div style="margin-top:6px" id="sessionRole">—</div>
+    <button class="btn btn-full" style="margin-top:14px;border-color:var(--danger);color:var(--danger)" onclick="doLogout()">
+      <i class="fas fa-right-from-bracket"></i> Sign Out &amp; Switch Account
     </button>
-    <div style="margin-top:8px;font-size:0.7rem;color:var(--text3)">
-      Don't have an account? <a href="../../public/register.html" style="color:var(--accent2)">Register here</a>
+  </div>
+
+  <!-- Admin panel -->
+  <div id="adminPanel">
+    <p class="section-title">All Registered Users</p>
+
+    <div class="stat-row" id="statsRow">
+      <div class="stat-pill">Total <strong id="statTotal">—</strong></div>
+      <div class="stat-pill">Admins <strong id="statAdmins">—</strong></div>
+      <div class="stat-pill">Viewers <strong id="statViewers">—</strong></div>
+    </div>
+
+    <div class="card">
+      <div id="tableWrap">
+        <div style="font-size:0.72rem;color:var(--text3);padding:1.2rem 0;text-align:center">
+          <i class="fas fa-circle-notch fa-spin"></i> &nbsp;Loading users…
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Viewer notice -->
+  <div id="viewerNotice" style="display:none">
+    <div class="viewer-notice">
+      <i class="fas fa-eye"></i> &nbsp;VIEW ONLY — Role management is restricted to Admin accounts.
+    </div>
+    <div class="card" style="max-width:420px">
+      <div class="card-label"><i class="fas fa-user-plus"></i> Need a different account?</div>
+      <div style="margin-top:10px;font-size:0.78rem;color:var(--text3);margin-bottom:12px;line-height:1.8">
+        Sign out and log in with an Admin account, or contact your Admin to upgrade your role.
+      </div>
+      <button class="btn btn-full" onclick="doLogout()">
+        <i class="fas fa-arrow-right-to-bracket"></i> Go to Login Page
+      </button>
+      <div style="margin-top:8px;font-size:0.7rem;color:var(--text3)">
+        Don't have an account? <a href="../../public/register.html" style="color:var(--accent2)">Register here</a>
+      </div>
     </div>
   </div>
 </main>
+
+<!-- Confirm delete overlay -->
+<div class="confirm-overlay" id="confirmOverlay" style="display:none">
+  <div class="confirm-box">
+    <h3><i class="fas fa-triangle-exclamation"></i> &nbsp;DELETE USER</h3>
+    <p>Are you sure you want to permanently delete<br>
+      <strong id="confirmUsername" style="color:var(--accent);font-size:1rem">—</strong>?<br><br>
+      This action <strong style="color:var(--danger)">cannot be undone.</strong>
+    </p>
+    <div class="confirm-btns">
+      <button class="btn" style="border-color:var(--border2);color:var(--text3)" onclick="closeConfirm()">
+        <i class="fas fa-xmark"></i> Cancel
+      </button>
+      <button class="action-btn btn-delete" style="padding:8px 20px" onclick="confirmDelete()">
+        <i class="fas fa-trash"></i> Delete
+      </button>
+    </div>
+  </div>
+</div>
+
 <script src="../js/shared.js"></script>
 <script>
+const API = 'http://localhost:5000';
+let pendingDelete = null;
+
 document.addEventListener('DOMContentLoaded', () => {
   initSidebar('switch_user');
-  document.getElementById('currentUserDisp').textContent = localStorage.getItem('username') || 'Unknown';
+
+  const me = localStorage.getItem('username') || 'Unknown';
+  document.getElementById('currentUserDisp').textContent = me;
+  document.getElementById('sessionUser').textContent     = me;
+  document.getElementById('sessionRole').innerHTML = isAdmin()
+    ? '<span style="color:var(--accent2)">⚡ Admin</span>'
+    : '<span style="color:#0099cc">👁 View Only</span>';
+
+  if (isAdmin()) {
+    document.getElementById('adminPanel').style.display  = 'block';
+    document.getElementById('viewerNotice').style.display = 'none';
+    document.getElementById('refreshBtn').style.display  = 'inline-flex';
+    loadUsers();
+  } else {
+    document.getElementById('adminPanel').style.display  = 'none';
+    document.getElementById('viewerNotice').style.display = 'block';
+    document.getElementById('refreshBtn').style.display  = 'none';
+  }
 });
+
+// ── Fetch all users ────────────────────────────────────────
+async function loadUsers() {
+  const token = localStorage.getItem('token');
+  document.getElementById('tableWrap').innerHTML =
+    '<div style="font-size:0.72rem;color:var(--text3);padding:1.2rem 0;text-align:center"><i class="fas fa-circle-notch fa-spin"></i> &nbsp;Loading…</div>';
+  try {
+    const res  = await fetch(API + '/users', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    const data = await res.json();
+    if (!data.success) return showToast('Failed to load users.', 'err');
+    renderStats(data.users);
+    renderTable(data.users);
+  } catch {
+    showToast('Cannot connect to server.', 'err');
+    document.getElementById('tableWrap').innerHTML =
+      '<div style="font-size:0.72rem;color:var(--danger);padding:1.2rem 0;text-align:center"><i class="fas fa-circle-exclamation"></i> &nbsp;Server unreachable — is the backend running on port 5000?</div>';
+  }
+}
+
+// ── Stats pills ────────────────────────────────────────────
+function renderStats(users) {
+  document.getElementById('statTotal').textContent   = users.length;
+  document.getElementById('statAdmins').textContent  = users.filter(u => u.role === 'admin').length;
+  document.getElementById('statViewers').textContent = users.filter(u => u.role === 'viewer').length;
+}
+
+// ── User table ─────────────────────────────────────────────
+function renderTable(users) {
+  const me = (localStorage.getItem('username') || '').toLowerCase();
+
+  if (!users.length) {
+    document.getElementById('tableWrap').innerHTML =
+      '<div style="font-size:0.72rem;color:var(--text3);padding:1rem 0;text-align:center">No users found.</div>';
+    return;
+  }
+
+  const rows = users.map(u => {
+    const isMe  = u.username.toLowerCase() === me;
+    const isAdm = u.role === 'admin';
+    const joined = u.createdAt
+      ? new Date(u.createdAt).toLocaleDateString('en-IN', { dateStyle: 'medium' })
+      : '—';
+
+    const youTag  = isMe ? '<span class="role-badge-you">YOU</span>' : '';
+    const roleBdg = isAdm
+      ? '<span class="role-badge-admin">ADMIN</span>'
+      : '<span class="role-badge-viewer">VIEWER</span>';
+
+    // Promote: only if viewer
+    const promoteBtn = !isAdm
+      ? `<button class="action-btn btn-promote" title="Promote to Admin"
+           onclick="changeRole('${u.username}','admin')">
+           <i class="fas fa-arrow-up"></i> Promote
+         </button>`
+      : '';
+
+    // Demote: only if admin and not yourself
+    const demoteBtn = isAdm && !isMe
+      ? `<button class="action-btn btn-demote" title="Demote to Viewer"
+           onclick="changeRole('${u.username}','viewer')">
+           <i class="fas fa-arrow-down"></i> Demote
+         </button>`
+      : '';
+
+    // Delete: disabled for self
+    const deleteBtn = !isMe
+      ? `<button class="action-btn btn-delete" title="Delete user"
+           onclick="askDelete('${u.username}')">
+           <i class="fas fa-trash"></i>
+         </button>`
+      : `<button class="action-btn btn-delete btn-disabled" title="Cannot delete yourself">
+           <i class="fas fa-trash"></i>
+         </button>`;
+
+    return `<tr>
+      <td style="color:var(--accent2);font-weight:bold">${u.username}${youTag}</td>
+      <td>${roleBdg}</td>
+      <td style="color:var(--text3)">${joined}</td>
+      <td style="white-space:nowrap">${promoteBtn}${demoteBtn}${deleteBtn}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('tableWrap').innerHTML = `
+    <table class="user-table">
+      <thead><tr>
+        <th>Username</th>
+        <th>Role</th>
+        <th>Joined</th>
+        <th>Actions</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+}
+
+// ── Promote / Demote ───────────────────────────────────────
+async function changeRole(username, newRole) {
+  const token = localStorage.getItem('token');
+  try {
+    const res  = await fetch(API + '/users/role', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body:    JSON.stringify({ username, role: newRole })
+    });
+    const data = await res.json();
+    if (data.success) {
+      showToast(`✓ ${username} is now ${newRole}`, 'ok');
+      loadUsers();
+    } else {
+      showToast(data.message || 'Update failed.', 'err');
+    }
+  } catch {
+    showToast('Cannot connect to server.', 'err');
+  }
+}
+
+// ── Delete: confirm step ───────────────────────────────────
+function askDelete(username) {
+  pendingDelete = username;
+  document.getElementById('confirmUsername').textContent = username;
+  document.getElementById('confirmOverlay').style.display = 'flex';
+}
+
+function closeConfirm() {
+  pendingDelete = null;
+  document.getElementById('confirmOverlay').style.display = 'none';
+}
+
+async function confirmDelete() {
+  if (!pendingDelete) return;
+  const target = pendingDelete;
+  closeConfirm();
+  const token  = localStorage.getItem('token');
+  const caller = localStorage.getItem('username');
+  try {
+    const res  = await fetch(API + '/users/delete', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body:    JSON.stringify({ username: target, caller })
+    });
+    const data = await res.json();
+    if (data.success) {
+      showToast(`✓ ${target} deleted`, 'ok');
+      loadUsers();
+    } else {
+      showToast(data.message || 'Delete failed.', 'err');
+    }
+  } catch {
+    showToast('Cannot connect to server.', 'err');
+  }
+}
+
+// ── Toast ──────────────────────────────────────────────────
+function showToast(msg, type = 'ok') {
+  const t = document.createElement('div');
+  t.className = `toast toast-${type}`;
+  t.innerHTML = `<i class="fas fa-${type === 'ok' ? 'circle-check' : 'circle-exclamation'}"></i> &nbsp;${msg}`;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3200);
+}
+
 function doLogout() { localStorage.clear(); window.location.replace(getPublicLogin()); }
 </script>
 </body></html>

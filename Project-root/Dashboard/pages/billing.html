@@ -121,7 +121,7 @@
   <div class="sidebar-logo"><h1>WATT<br>WISE</h1><p>Energy Monitor</p></div>
   <div class="sidebar-user">
     <div class="avatar" id="avatarEl">—</div>
-    <div class="sidebar-user-info"><span id="sidebarUser">—</span><small>Campus Admin</small></div>
+    <div class="sidebar-user-info"><span id="sidebarUser">—</span><small id="sidebarRole">—</small></div>
   </div>
   <nav class="sidebar-nav">
     <div class="nav-section-label">Main</div>
@@ -218,6 +218,16 @@ let grandTotal = 0;
 
 document.addEventListener('DOMContentLoaded', () => {
   initSidebar('billing');
+
+  // Viewers can see costs but not set budgets
+  if (!isAdmin()) {
+    document.querySelectorAll('.budget-input-row, .budget-save-btn').forEach(el => el.style.display = 'none');
+    // Add a notice banner
+    const notice = document.createElement('div');
+    notice.style.cssText = 'margin-bottom:1rem;padding:8px 14px;background:rgba(0,170,255,0.06);border:1px solid #004466;font-size:0.72rem;color:#0099cc;letter-spacing:1px;';
+    notice.innerHTML = '<i class="fas fa-eye"></i> &nbsp;VIEW ONLY MODE — Budget controls are visible to Admins only.';
+    document.querySelector('.main').insertBefore(notice, document.querySelector('.topbar').nextSibling);
+  }
 
   BLOCKS.forEach(b => {
     costs[b] = +(WW.blocks[b].total * RATE).toFixed(2);

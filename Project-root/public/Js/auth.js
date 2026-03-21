@@ -51,7 +51,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
         showSuccess("Login successful! Redirecting…");
         setTimeout(() => {
-          window.location.replace("../Dashboard/dashboard.html");
+          // public/Js/ → up to public/ → up to Project-root/ → Dashboard/dashboard.html
+          window.location.replace("../../Dashboard/dashboard.html");
         }, 1000);
       } else {
         showError(data.message || "Invalid username or password.");
