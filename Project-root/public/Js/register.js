@@ -1,4 +1,5 @@
 document.addEventListener("DOMContentLoaded", () => {
+
   const form        = document.getElementById("registerForm");
   const toggle      = document.getElementById("togglePassword");
   const passInput   = document.getElementById("password");
@@ -11,8 +12,8 @@ document.addEventListener("DOMContentLoaded", () => {
     toggle.addEventListener("click", () => {
       const show = passInput.type === "password";
       passInput.type = show ? "text" : "password";
-      toggle.classList.toggle("fa-eye",       !show);
-      toggle.classList.toggle("fa-eye-slash",  show);
+      toggle.classList.toggle("fa-eye",      !show);
+      toggle.classList.toggle("fa-eye-slash", show);
     });
   }
 
@@ -23,81 +24,72 @@ document.addEventListener("DOMContentLoaded", () => {
     e.preventDefault();
     clearMessage();
 
-    // NOTE: Only trim username; do NOT trim password — spaces can be intentional
     const username     = document.getElementById("username")?.value?.trim() ?? "";
     const passValue    = passInput?.value ?? "";
     const confirmValue = confirmPass?.value ?? "";
 
-    // ── Client-side validation ──────────────────────────
-    if (!username || !passValue || !confirmValue) {
+    // Client-side validation
+    if (!username || !passValue || !confirmValue)
       return showMessage("All fields are required.", "error");
-    }
-    if (username.length < 3 || username.length > 50) {
-      return showMessage("Username must be between 3 and 50 characters.", "error");
-    }
-    if (passValue.length < 6) {
+    if (username.length < 3 || username.length > 50)
+      return showMessage("Username must be 3–50 characters.", "error");
+    if (passValue.length < 6)
       return showMessage("Password must be at least 6 characters.", "error");
-    }
-    if (passValue !== confirmValue) {
+    if (passValue !== confirmValue)
       return showMessage("Passwords do not match.", "error");
-    }
 
     submitBtn.disabled    = true;
     submitBtn.textContent = "Creating account…";
 
     try {
-      const res = await fetch("http://localhost:5000/register", {
+      // Step 1: Register
+      const regRes = await fetch("http://localhost:5000/register", {
         method:  "POST",
-        headers: { "Content-Type": "application/json", "Accept": "application/json" },
-        body:    JSON.stringify({ username, password: passValue })
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ username, password: passValue }),
       });
 
-      let data;
+      const regData = await regRes.json();
+
+      if (!regRes.ok || !regData.success) {
+        return showMessage(regData.message || "Registration failed.", "error");
+      }
+
+      showMessage("Account created! Signing you in…", "success");
+
+      // Step 2: Auto-login
       try {
-        data = await res.json();
-      } catch {
-        throw new Error("Invalid response from server.");
-      }
+        const loginRes  = await fetch("http://localhost:5000/login", {
+          method:  "POST",
+          headers: { "Content-Type": "application/json" },
+          body:    JSON.stringify({ username, password: passValue }),
+        });
+        const loginData = await loginRes.json();
 
-      if (res.ok && data.success) {
-        showMessage("Account created! Signing you in…", "success");
+        if (loginRes.ok && loginData.success) {
+          localStorage.clear();
+          localStorage.setItem("isLoggedIn", "true");
+          localStorage.setItem("username",   loginData.username);
+          localStorage.setItem("role",       loginData.role);    // ← real role
+          localStorage.setItem("token",      loginData.token);   // ← real JWT
 
-        try {
-          const loginRes  = await fetch("http://localhost:5000/login", {
-            method:  "POST",
-            headers: { "Content-Type": "application/json" },
-            body:    JSON.stringify({ username, password: passValue })
-          });
-          const loginData = await loginRes.json();
-
-          if (loginRes.ok && loginData.success) {
-            localStorage.clear();
-            localStorage.setItem("isLoggedIn", "true");
-            localStorage.setItem("username",   loginData.username);
-            localStorage.setItem("token",      loginData.token);
-            localStorage.setItem("role",       loginData.role || "viewer");
-
-            showMessage("All done! Going to dashboard…", "success");
-            // public/Js/ → up to public/ → up to Project-root/ → Dashboard/dashboard.html
-            setTimeout(() => {
-              window.location.replace("../../Dashboard/dashboard.html");
-            }, 1000);
-          } else {
-            showMessage("Account created! Please sign in.", "success");
-            // public/Js/ → up to public/ → index.html
-            setTimeout(() => { window.location.replace("../index.html"); }, 1500);
-          }
-        } catch {
+          showMessage("All done! Going to dashboard…", "success");
+          setTimeout(() => {
+            window.location.replace("../../Dashboard/dashboard.html");
+          }, 1000);
+        } else {
           showMessage("Account created! Please sign in.", "success");
-          setTimeout(() => { window.location.replace("../index.html"); }, 1500);
+          setTimeout(() => window.location.replace("../index.html"), 1500);
         }
-      } else {
-        showMessage(data.message || "Registration failed. Please try again.", "error");
+      } catch {
+        showMessage("Account created! Please sign in.", "success");
+        setTimeout(() => window.location.replace("../index.html"), 1500);
       }
+
     } catch (err) {
       console.error("Registration error:", err);
       showMessage(
-        "Cannot connect to the server. Make sure the backend is running on port 5000.",
+        "Cannot connect to server. Make sure the backend is running on port 5000.",
         "error"
       );
     } finally {
@@ -112,7 +104,6 @@ document.addEventListener("DOMContentLoaded", () => {
     messageEl.style.color   = type === "success" ? "#00ff41" : "#ff3366";
     messageEl.style.display = "block";
   }
-
   function clearMessage() {
     messageEl.style.display = "none";
     messageEl.textContent   = "";
