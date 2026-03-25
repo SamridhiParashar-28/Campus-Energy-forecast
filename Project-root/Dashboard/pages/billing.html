@@ -49,9 +49,7 @@
       border-color: var(--accent);
       color: var(--accent);
     }
-    .budget-bar-wrap {
-      margin-top: 8px;
-    }
+    .budget-bar-wrap { margin-top: 8px; }
     .budget-bar-track {
       height: 6px;
       background: var(--bg3);
@@ -87,24 +85,14 @@
       align-items: center;
       margin-bottom: 6px;
     }
-    .block-bill-name {
-      font-size: 0.75rem;
-      color: var(--accent2);
-      letter-spacing: 1px;
-    }
-    .block-bill-cost {
-      font-family: var(--font-head);
-      font-size: 1rem;
-      color: var(--accent);
-    }
+    .block-bill-name { font-size: 0.75rem; color: var(--accent2); letter-spacing: 1px; }
+    .block-bill-cost { font-family: var(--font-head); font-size: 1rem; color: var(--accent); }
     .total-budget-card {
       background: var(--card);
       border: 2px solid var(--border2);
       padding: 1.4rem;
     }
-    .total-budget-card .card-value {
-      font-size: 1.8rem;
-    }
+    .total-budget-card .card-value { font-size: 1.8rem; }
     .saved-msg {
       font-size: 0.65rem;
       color: var(--accent2);
@@ -121,7 +109,7 @@
   <div class="sidebar-logo"><h1>WATT<br>WISE</h1><p>Energy Monitor</p></div>
   <div class="sidebar-user">
     <div class="avatar" id="avatarEl">—</div>
-    <div class="sidebar-user-info"><span id="sidebarUser">—</span><small id="sidebarRole">—</small></div>
+    <div class="sidebar-user-info"><span id="sidebarUser">—</span><small>Campus Admin</small></div>
   </div>
   <nav class="sidebar-nav">
     <div class="nav-section-label">Main</div>
@@ -211,37 +199,35 @@
 
 <script src="../js/shared.js"></script>
 <script>
-const RATE = 8.5;
+const RATE   = 8.5;
 const BLOCKS = ['G-H','B-H','AB1','AB2','ADMIN'];
+
+// Computed once after DOM loads — declared here so helper functions can reference them
 const costs = {};
 let grandTotal = 0;
 
 document.addEventListener('DOMContentLoaded', () => {
-  initSidebar('billing');
+  try {
+    initSidebar('billing');
 
-  // Viewers can see costs but not set budgets
-  if (!isAdmin()) {
-    document.querySelectorAll('.budget-input-row, .budget-save-btn').forEach(el => el.style.display = 'none');
-    // Add a notice banner
-    const notice = document.createElement('div');
-    notice.style.cssText = 'margin-bottom:1rem;padding:8px 14px;background:rgba(0,170,255,0.06);border:1px solid #004466;font-size:0.72rem;color:#0099cc;letter-spacing:1px;';
-    notice.innerHTML = '<i class="fas fa-eye"></i> &nbsp;VIEW ONLY MODE — Budget controls are visible to Admins only.';
-    document.querySelector('.main').insertBefore(notice, document.querySelector('.topbar').nextSibling);
+    // ── Compute costs first, then build all sections ────────
+    BLOCKS.forEach(b => {
+      costs[b]    = +(WW.blocks[b].total * RATE).toFixed(2);
+      grandTotal += costs[b];
+    });
+
+    document.getElementById('campusTotalCost').textContent =
+      '₹' + grandTotal.toLocaleString('en-IN', {maximumFractionDigits: 0});
+
+    buildBlockCards();
+    buildTable();
+    buildPie();
+    buildAppBars();
+    loadAllBudgets();
+
+  } catch (err) {
+    console.error('[WattWise] Billing init error:', err);
   }
-
-  BLOCKS.forEach(b => {
-    costs[b] = +(WW.blocks[b].total * RATE).toFixed(2);
-    grandTotal += costs[b];
-  });
-
-  document.getElementById('campusTotalCost').textContent =
-    '₹' + grandTotal.toLocaleString('en-IN', {maximumFractionDigits:0});
-
-  buildBlockCards();
-  buildTable();
-  buildPie();
-  buildAppBars();
-  loadAllBudgets();
 });
 
 // ── Block budget cards ─────────────────────────────────────
@@ -285,10 +271,8 @@ function saveBudgetEntry(key) {
   input.style.borderColor = '';
   saveBudget(key, val);
   updateBudgetBar(key, val);
-
   const msg = document.getElementById('saved-' + key);
-  msg.classList.add('show');
-  setTimeout(() => msg.classList.remove('show'), 2000);
+  if (msg) { msg.classList.add('show'); setTimeout(() => msg.classList.remove('show'), 2000); }
 }
 
 // ── Update progress bar ────────────────────────────────────
@@ -296,17 +280,17 @@ function updateBudgetBar(key, budget) {
   const spent   = key === 'TOTAL' ? grandTotal : costs[key];
   const wrap    = document.getElementById('bar-wrap-' + key);
   const fill    = document.getElementById('bar-fill-' + key);
-  const pctEl   = document.getElementById('bar-pct-' + key);
-  const limitEl = document.getElementById('bar-limit-' + key);
-  const badgeEl = document.getElementById('badge-' + key);
+  const pctEl   = document.getElementById('bar-pct-'  + key);
+  const limitEl = document.getElementById('bar-limit-'+ key);
+  const badgeEl = document.getElementById('badge-'    + key);
 
   const status = getBudgetStatus(spent, budget);
-  if (!status) return;
+  if (!status || !wrap) return;
 
-  wrap.style.display = 'block';
-  const pct = Math.min(status.pct, 100);
-  fill.style.width = pct + '%';
-  fill.className   = 'budget-bar-fill ' + (status.pct >= 100 ? 'bad' : status.pct >= 80 ? 'warn' : 'ok');
+  wrap.style.display  = 'block';
+  const pct           = Math.min(status.pct, 100);
+  fill.style.width    = pct + '%';
+  fill.className      = 'budget-bar-fill ' + (status.pct >= 100 ? 'bad' : status.pct >= 80 ? 'warn' : 'ok');
   pctEl.textContent   = status.pct.toFixed(1) + '%';
   limitEl.textContent = 'Limit: ₹' + budget.toLocaleString('en-IN');
   badgeEl.innerHTML   = `<span class="badge ${status.cls}">${status.label}</span>`;
@@ -354,8 +338,9 @@ function buildTable() {
 
 // ── Pie chart ──────────────────────────────────────────────
 function buildPie() {
-  const pieCtx = document.getElementById('costPie').getContext('2d');
-  new Chart(pieCtx, {
+  const pieCtx = document.getElementById('costPie');
+  if (!pieCtx) return;
+  new Chart(pieCtx.getContext('2d'), {
     type: 'doughnut',
     data: {
       labels: BLOCKS.map(b => WW.blocks[b].label),
@@ -363,9 +348,10 @@ function buildPie() {
         backgroundColor: ['#00ff41','#00cc33','#00aaff','#ffaa00','#ff6432'],
         borderColor: '#010d01', borderWidth: 2 }]
     },
-    options: { responsive:true, maintainAspectRatio:false,
+    options: {
+      responsive: true, maintainAspectRatio: false,
       plugins: {
-        legend: { labels: { color:'#00cc33', font:{family:"'Share Tech Mono'",size:10}, boxWidth:10 }},
+        legend:  { labels: { color:'#00cc33', font:{family:"'Share Tech Mono'",size:10}, boxWidth:10 }},
         tooltip: { backgroundColor:'#010d01', borderColor:'#00551a', borderWidth:1, titleColor:'#00ff41', bodyColor:'#00cc33' }
       }
     }
@@ -377,17 +363,17 @@ function buildAppBars() {
   const allApps = {};
   BLOCKS.forEach(b => {
     WW.blocks[b].appliances.forEach(([name, kwh]) => {
-      const norm = name.toLowerCase().replace(/s$/, '');
-      allApps[norm] = (allApps[norm] || 0) + kwh;
+      const norm     = name.toLowerCase().replace(/s$/, '');
+      allApps[norm]  = (allApps[norm] || 0) + kwh;
     });
   });
-  const sorted = Object.entries(allApps).sort((a,b) => b[1]-a[1]).slice(0,6);
+  const sorted = Object.entries(allApps).sort((a, b) => b[1] - a[1]).slice(0, 6);
   const maxV   = sorted[0][1];
   document.getElementById('appCostBars').innerHTML = sorted.map(([name, kwh]) =>
     `<div class="bar-row">
       <span class="bar-lbl" style="width:100px;text-transform:capitalize">${name}</span>
-      <div class="bar-track"><div class="bar-fill" style="width:${Math.round(kwh/maxV*100)}%"></div></div>
-      <span class="bar-val">&#8377;${(kwh*RATE).toFixed(0)}</span>
+      <div class="bar-track"><div class="bar-fill" style="width:${Math.round(kwh / maxV * 100)}%"></div></div>
+      <span class="bar-val">&#8377;${(kwh * RATE).toFixed(0)}</span>
     </div>`
   ).join('');
 }

@@ -12,21 +12,14 @@
     .app-bar-track{flex:1;height:5px;background:var(--bg3);border-radius:3px;overflow:hidden;}
     .app-bar-fill{height:100%;background:var(--accent);border-radius:3px;}
     .app-bar-val{font-size:0.63rem;color:var(--accent2);width:60px;text-align:right;}
-    .room-tag{display:inline-block;padding:2px 8px;font-size:0.62rem;background:var(--bg3);border:1px solid var(--border);color:var(--text3);margin:2px;}
   </style>
 </head>
 <body>
 <aside class="sidebar">
-  <div class="sidebar-logo">
-    <h1>WATT<br>WISE</h1>
-    <p>Energy Monitor</p>
-  </div>
+  <div class="sidebar-logo"><h1>WATT<br>WISE</h1><p>Energy Monitor</p></div>
   <div class="sidebar-user">
     <div class="avatar" id="avatarEl">—</div>
-    <div class="sidebar-user-info">
-      <span id="sidebarUser">—</span>
-      <small id="sidebarRole">—</small>
-    </div>
+    <div class="sidebar-user-info"><span id="sidebarUser">—</span><small>Campus Admin</small></div>
   </div>
   <nav class="sidebar-nav">
     <div class="nav-section-label">Main</div>
@@ -57,7 +50,9 @@
   <div class="topbar">
     <div class="topbar-left">
       <h2><i class="fas fa-mars" style="font-size:1rem;margin-right:8px"></i>Boys Hostel</h2>
-      <p>Jan 06–12, 2025 &middot; Block Detail View &middot; <a id="backBtn" style="color:var(--accent3);cursor:pointer;text-decoration:underline">&#8592; Back to Campus</a></p>
+      <p>Jan 06–12, 2025 &middot; Block Detail View &middot;
+        <a id="backBtn" style="color:var(--accent3);cursor:pointer;text-decoration:underline">&#8592; Back to Campus</a>
+      </p>
     </div>
     <div class="topbar-right"><span><span class="status-dot"></span>Block Online</span></div>
   </div>
@@ -67,7 +62,7 @@
 
   <p class="section-title">Daily Consumption — Jan 06 to Jan 12</p>
   <div class="card" style="margin-bottom:1rem">
-    <div class="chart-wrap"><canvas id="dailyChart"></canvas></div>
+    <div class="chart-wrap" style="height:240px;"><canvas id="dailyChart"></canvas></div>
   </div>
 
   <div class="grid-2">
@@ -90,8 +85,6 @@
     <div class="card">
       <div class="card-label"><i class="fas fa-triangle-exclamation"></i> Anomaly Notes</div>
       <div id="anomalyNotes"></div>
-      <div class="card-label" style="margin-top:12px"><i class="fas fa-door-open"></i> Rooms / Zones</div>
-      <div id="roomTags" style="margin-top:6px"></div>
     </div>
   </div>
 </main>
@@ -99,71 +92,112 @@
 <script src="../js/shared.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-  initSidebar('block_bh');
-  const backBtn = document.getElementById('backBtn');
-  if (backBtn) backBtn.addEventListener('click', () => navigate('dashboard'));
-  const B = WW.blocks['B-H'];
+  try {
+    initSidebar('block_bh');
 
-  // Stats
-  const statsHtml = `
-    <div class="card"><div class="card-label"><i class="fas fa-bolt"></i> Week Total</div><div class="card-value">${B.total}</div><div class="card-sub">kWh consumed</div></div>
-    <div class="card"><div class="card-label"><i class="fas fa-calendar-day"></i> Daily Avg</div><div class="card-value">${B.avg}</div><div class="card-sub">kWh / day</div></div>
-    <div class="card"><div class="card-label"><i class="fas fa-fire"></i> Peak Day</div><div class="card-value">${B.peak}</div><div class="card-sub">kWh (single day max)</div></div>
-    <div class="card"><div class="card-label"><i class="fas fa-file-invoice-dollar"></i> Est. Bill</div><div class="card-value" style="font-size:1.1rem">&#8377;${(B.total*B.rate).toLocaleString('en-IN',{maximumFractionDigits:0})}</div><div class="card-sub">@ &#8377;${B.rate}/kWh</div></div>
-  `;
-  document.getElementById('statsGrid').innerHTML = statsHtml;
+    const backBtn = document.getElementById('backBtn');
+    if (backBtn) backBtn.addEventListener('click', () => navigate('dashboard'));
 
-  // Daily chart
-  lineChart('dailyChart', WW.dates, [
-    dataset(B.label + ' kWh', B.daily, 'rgb(0,255,65)')
-  ]);
+    const B = WW.blocks['B-H'];
 
-  // Appliance bars
-  const maxVal = B.appliances[0][1];
-  document.getElementById('appBars').innerHTML = B.appliances.map(([name,kwh]) =>
-    `<div class="app-bar-row">
-      <span class="app-bar-lbl">${name}</span>
-      <div class="app-bar-track"><div class="app-bar-fill" style="width:${Math.round(kwh/maxVal*100)}%"></div></div>
-      <span class="app-bar-val">${kwh} kWh</span>
-    </div>`
-  ).join('');
+    // ── Stats cards ──────────────────────────────────────
+    document.getElementById('statsGrid').innerHTML = `
+      <div class="card">
+        <div class="card-label"><i class="fas fa-bolt"></i> Week Total</div>
+        <div class="card-value">${B.total}</div>
+        <div class="card-sub">kWh consumed</div>
+      </div>
+      <div class="card">
+        <div class="card-label"><i class="fas fa-calendar-day"></i> Daily Avg</div>
+        <div class="card-value">${B.avg}</div>
+        <div class="card-sub">kWh / day</div>
+      </div>
+      <div class="card">
+        <div class="card-label"><i class="fas fa-fire"></i> Peak Day</div>
+        <div class="card-value">${B.peak}</div>
+        <div class="card-sub">kWh (single day max)</div>
+      </div>
+      <div class="card">
+        <div class="card-label"><i class="fas fa-file-invoice-dollar"></i> Est. Bill</div>
+        <div class="card-value" style="font-size:1.1rem">
+          &#8377;${(B.total * B.rate).toLocaleString('en-IN', {maximumFractionDigits:0})}
+        </div>
+        <div class="card-sub">@ &#8377;${B.rate}/kWh</div>
+      </div>`;
 
-  // Pie chart
-  const pieCtx = document.getElementById('pieChart').getContext('2d');
-  new Chart(pieCtx, {
-    type: 'doughnut',
-    data: {
-      labels: B.appliances.map(a=>a[0]),
-      datasets:[{ data: B.appliances.map(a=>a[1]),
-        backgroundColor:['#00ff41','#00cc33','#009922','#007711','#00aa44','#006633','#004422','#00ff88'],
-        borderColor:'#010d01', borderWidth:2 }]
-    },
-    options:{ responsive:true, maintainAspectRatio:false,
-      plugins:{
-        legend:{labels:{color:'#00cc33',font:{family:"'Share Tech Mono'",size:10},boxWidth:10}},
-        tooltip:{backgroundColor:'#010d01',borderColor:'#00551a',borderWidth:1,titleColor:'#00ff41',bodyColor:'#00cc33'}
+    // ── Daily chart ──────────────────────────────────────
+    lineChart('dailyChart', WW.dates, [
+      dataset(B.label + ' kWh', B.daily, 'rgb(0,255,65)')
+    ]);
+
+    // ── Appliance bars ───────────────────────────────────
+    const maxVal = B.appliances[0][1];
+    document.getElementById('appBars').innerHTML = B.appliances.map(([name, kwh]) =>
+      `<div class="app-bar-row">
+        <span class="app-bar-lbl">${name}</span>
+        <div class="app-bar-track"><div class="app-bar-fill" style="width:${Math.round(kwh / maxVal * 100)}%"></div></div>
+        <span class="app-bar-val">${kwh} kWh</span>
+      </div>`
+    ).join('');
+
+    // ── Pie chart ────────────────────────────────────────
+    new Chart(document.getElementById('pieChart').getContext('2d'), {
+      type: 'doughnut',
+      data: {
+        labels: B.appliances.map(a => a[0]),
+        datasets: [{
+          data: B.appliances.map(a => a[1]),
+          backgroundColor: ['#00ff41','#00cc33','#009922','#007711','#00aa44','#006633','#004422','#00ff88'],
+          borderColor: '#010d01', borderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend:  { labels: { color:'#00cc33', font:{family:"'Share Tech Mono'",size:10}, boxWidth:10 } },
+          tooltip: { backgroundColor:'#010d01', borderColor:'#00551a', borderWidth:1, titleColor:'#00ff41', bodyColor:'#00cc33' }
+        }
       }
-    }
-  });
+    });
 
-  // Billing rows
-  document.getElementById('billingRows').innerHTML = B.appliances.map(([name,kwh]) =>
-    `<div class="billing-row" style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:0.7rem;">
-      <span style="color:var(--text3)">${name}</span>
-      <strong style="color:var(--accent2)">&#8377; ${(kwh*B.rate).toLocaleString('en-IN',{maximumFractionDigits:0})}</strong>
-    </div>`
-  ).join('') +
-  `<div style="display:flex;justify-content:space-between;padding:8px 0 0;font-size:0.78rem;border-top:1px solid var(--border2);margin-top:4px;">
-    <span style="color:var(--text3)">Total</span>
-    <strong style="color:var(--accent);font-family:var(--font-head)">&#8377; ${(B.total*B.rate).toLocaleString('en-IN',{maximumFractionDigits:0})}</strong>
-  </div>`;
+    // ── Billing rows ─────────────────────────────────────
+    document.getElementById('billingRows').innerHTML =
+      B.appliances.map(([name, kwh]) =>
+        `<div style="display:flex;justify-content:space-between;padding:6px 0;
+                     border-bottom:1px solid var(--border);font-size:0.7rem;">
+          <span style="color:var(--text3)">${name}</span>
+          <strong style="color:var(--accent2)">
+            &#8377; ${(kwh * B.rate).toLocaleString('en-IN', {maximumFractionDigits:0})}
+          </strong>
+        </div>`
+      ).join('') +
+      `<div style="display:flex;justify-content:space-between;padding:8px 0 0;
+                   font-size:0.78rem;border-top:1px solid var(--border2);margin-top:4px;">
+        <span style="color:var(--text3)">Total</span>
+        <strong style="color:var(--accent);font-family:var(--font-head)">
+          &#8377; ${(B.total * B.rate).toLocaleString('en-IN', {maximumFractionDigits:0})}
+        </strong>
+      </div>`;
 
-  // Anomaly
-  const topApp = B.appliances[0];
-  const pct = Math.round(topApp[1]/B.total*100);
-  document.getElementById('anomalyNotes').innerHTML =
-    `<div class="anomaly-item"><i class="fas fa-circle-exclamation"></i><span>${topApp[0]} = ${pct}% of total usage</span></div>` +
-    (pct > 50 ? `<div class="anomaly-item"><i class="fas fa-triangle-exclamation"></i><span>Single appliance dominates — review usage policy</span></div>` : '');
+    // ── Anomaly notes ─────────────────────────────────────
+    const topApp = B.appliances[0];
+    const pct    = Math.round(topApp[1] / B.total * 100);
+    document.getElementById('anomalyNotes').innerHTML =
+      `<div class="anomaly-item">
+        <i class="fas fa-circle-exclamation"></i>
+        <span>${topApp[0]} = ${pct}% of total usage</span>
+      </div>` +
+      (pct > 50
+        ? `<div class="anomaly-item">
+            <i class="fas fa-triangle-exclamation"></i>
+            <span>Single appliance dominates — review usage policy</span>
+          </div>`
+        : '');
+
+  } catch (err) {
+    console.error('[WattWise] Block page init error:', err);
+  }
 });
 </script>
-</body></html>
+</body>
+</html>

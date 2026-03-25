@@ -32,6 +32,8 @@
     .billing-row strong{color:var(--accent2);}
     .billing-total{border-top:1px solid var(--border2);margin-top:4px;padding-top:8px;}
     .billing-total strong{color:var(--accent);font-family:var(--font-head);font-size:0.95rem;}
+    /* give the chart a reliable height so Chart.js can size itself */
+    #mainChart { display:block; }
     @media(max-width:900px){.appliance-grid{grid-template-columns:repeat(3,1fr);}}
   </style>
 </head>
@@ -45,7 +47,7 @@
     <div class="avatar" id="avatarEl">—</div>
     <div class="sidebar-user-info">
       <span id="sidebarUser">—</span>
-      <small id="sidebarRole">—</small>
+      <small>Campus Admin</small>
     </div>
   </div>
   <nav class="sidebar-nav">
@@ -141,7 +143,8 @@
           <div class="refresh-item"><span>Last Run</span><strong id="lastRun">—</strong></div>
           <div class="refresh-item"><span>Status</span><strong style="color:var(--accent)">Ready</strong></div>
         </div>
-        <button class="btn btn-full" onclick="runForecast()"><i class="fas fa-rotate"></i> Run Forecast Now</button>
+        <!-- give this button a specific id so runForecast() can target it safely -->
+        <button class="btn btn-full" id="forecastBtn" onclick="runForecast()"><i class="fas fa-rotate"></i> Run Forecast Now</button>
       </div>
       <div class="card anomaly-card">
         <div class="card-label" style="color:var(--danger)"><i class="fas fa-triangle-exclamation"></i> Anomaly Detection</div>
@@ -174,7 +177,8 @@
   <div class="grid-21">
     <div class="card">
       <div class="card-label"><i class="fas fa-chart-area"></i> 7-Day Campus Consumption (All Blocks)</div>
-      <div class="chart-wrap"><canvas id="mainChart"></canvas></div>
+      <!-- chart-wrap height comes from shared.css; explicit style ensures Chart.js sizes correctly -->
+      <div class="chart-wrap" style="height:260px;"><canvas id="mainChart"></canvas></div>
     </div>
     <div class="card">
       <div class="card-label"><i class="fas fa-file-invoice-dollar"></i> Billing Summary (@ &#8377;8.5/kWh)</div>
@@ -190,102 +194,113 @@
 <script src="js/shared.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-  initSidebar('dashboard');
-  // Wire block buttons
-  document.querySelectorAll('.block-btn[data-nav]').forEach(btn => {
-    btn.addEventListener('click', () => navigate(btn.dataset.nav));
-  });
-  const u = localStorage.getItem('username') || 'Admin';
-  document.getElementById('topUser').textContent = u;
-  document.getElementById('dateStr').textContent = new Date().toLocaleDateString('en-IN',{dateStyle:'medium'});
-  document.getElementById('lastRun').textContent = new Date().toLocaleTimeString('en-IN',{timeStyle:'short'});
+  try {
+    initSidebar('dashboard');
 
-  // Role-based UI restrictions
-  if (!isAdmin()) {
-    const uploadCard = document.querySelector('.upload-card');
-    if (uploadCard) {
-      uploadCard.style.opacity = '0.3';
-      uploadCard.style.pointerEvents = 'none';
-      uploadCard.querySelector('strong').textContent = 'Admin Only';
-      uploadCard.querySelector('p').textContent = 'Upload requires Admin access';
-    }
-    const budgetBtn = document.querySelector('button.btn-full[onclick*="billing"]');
-    if (budgetBtn) budgetBtn.style.display = 'none';
+    // Wire block buttons
+    document.querySelectorAll('.block-btn[data-nav]').forEach(btn => {
+      btn.addEventListener('click', () => navigate(btn.dataset.nav));
+    });
+
+    const u = localStorage.getItem('username') || 'Admin';
+    document.getElementById('topUser').textContent  = u;
+    document.getElementById('dateStr').textContent  = new Date().toLocaleDateString('en-IN', {dateStyle:'medium'});
+    document.getElementById('lastRun').textContent  = new Date().toLocaleTimeString('en-IN', {timeStyle:'short'});
+
+    // ── 7-day chart ────────────────────────────────────────
+    lineChart('mainChart', WW.dates, [
+      dataset('Girls Hostel', WW.blocks['G-H'].daily,   'rgb(0,255,65)'),
+      dataset('Boys Hostel',  WW.blocks['B-H'].daily,   'rgb(0,204,51)'),
+      dataset('Academic 1',   WW.blocks['AB1'].daily,   'rgb(0,170,255)'),
+      dataset('Academic 2',   WW.blocks['AB2'].daily,   'rgb(255,170,0)'),
+      dataset('Admin',        WW.blocks['ADMIN'].daily, 'rgb(255,100,50)')
+    ]);
+
+    buildDashBilling();
+
+  } catch (err) {
+    console.error('[WattWise] Dashboard init error:', err);
   }
-
-  const gh  = WW.blocks['G-H'].daily;
-  const bh  = WW.blocks['B-H'].daily;
-  const ab1 = WW.blocks['AB1'].daily;
-  const ab2 = WW.blocks['AB2'].daily;
-  const adm = WW.blocks['ADMIN'].daily;
-
-  lineChart('mainChart', WW.dates, [
-    dataset('Girls Hostel', gh,  'rgb(0,255,65)'),
-    dataset('Boys Hostel',  bh,  'rgb(0,204,51)'),
-    dataset('Academic 1',   ab1, 'rgb(0,170,255)'),
-    dataset('Academic 2',   ab2, 'rgb(255,170,0)'),
-    dataset('Admin',        adm, 'rgb(255,100,50)')
-  ]);
-
-  buildDashBilling();
 });
 
+// ── Billing summary panel ──────────────────────────────────
 function buildDashBilling() {
-  const RATE = 8.5;
+  const RATE   = 8.5;
   const blocks = ['G-H','B-H','AB1','AB2','ADMIN'];
-  const saved = getBudgets();
-  let grand = 0;
+  const saved  = getBudgets();
+  let grand    = 0;
+
   const rows = blocks.map(b => {
-    const cost = +(WW.blocks[b].total * RATE).toFixed(2);
-    grand += cost;
+    const cost   = +(WW.blocks[b].total * RATE).toFixed(2);
+    grand       += cost;
     const budget = saved[b];
     const status = getBudgetStatus(cost, budget);
     const indicator = status
-      ? ` <span style="font-size:0.6rem;color:${status.pct>=100?'var(--danger)':status.pct>=80?'var(--warn)':'var(--accent2)'}">${status.pct.toFixed(0)}%</span>`
+      ? ` <span style="font-size:0.6rem;color:${status.pct >= 100 ? 'var(--danger)' : status.pct >= 80 ? 'var(--warn)' : 'var(--accent2)'}">
+            ${status.pct.toFixed(0)}%
+          </span>`
       : '';
-    return `<div class="billing-row"><span>${WW.blocks[b].label}</span><strong>&#8377;${cost.toLocaleString('en-IN')}${indicator}</strong></div>`;
+    return `<div class="billing-row">
+              <span>${WW.blocks[b].label}</span>
+              <strong>&#8377;${cost.toLocaleString('en-IN')}${indicator}</strong>
+            </div>`;
   });
-  rows.push(`<div class="billing-row billing-total"><span>Campus Total</span><strong>&#8377;${grand.toLocaleString('en-IN',{maximumFractionDigits:0})}</strong></div>`);
+
+  rows.push(`<div class="billing-row billing-total">
+               <span>Campus Total</span>
+               <strong>&#8377;${grand.toLocaleString('en-IN', {maximumFractionDigits:0})}</strong>
+             </div>`);
+
   document.getElementById('dashBillingRows').innerHTML = rows.join('');
 
-  const totalBudget = saved['TOTAL'];
-  const totalStatus = getBudgetStatus(grand, totalBudget);
-  const badge = document.getElementById('dashBudgetBadge');
+  const totalStatus = getBudgetStatus(grand, saved['TOTAL']);
+  const badge       = document.getElementById('dashBudgetBadge');
   if (badge) {
     badge.innerHTML = totalStatus
       ? `<span class="badge ${totalStatus.cls}">${totalStatus.label} &mdash; ${totalStatus.pct.toFixed(1)}%</span>`
-      : `<span style="font-size:0.65rem;color:var(--text3)">No campus budget set &mdash; <a onclick="navigate('billing')" style="color:var(--accent3);cursor:pointer">Set now</a></span>`;
+      : `<span style="font-size:0.65rem;color:var(--text3)">No campus budget set &mdash;
+           <a onclick="navigate('billing')" style="color:var(--accent3);cursor:pointer">Set now</a>
+         </span>`;
   }
 }
 
+// ── Forecast button ────────────────────────────────────────
 function runForecast() {
-  const btn = document.querySelector('.btn-full');
-  btn.textContent = 'Running...'; btn.disabled = true;
+  const btn = document.getElementById('forecastBtn');
+  if (!btn) return;
+  btn.textContent = 'Running...';
+  btn.disabled    = true;
   setTimeout(() => {
-    document.getElementById('lastRun').textContent = new Date().toLocaleTimeString('en-IN',{timeStyle:'short'});
-    btn.innerHTML = '<i class="fas fa-rotate"></i> Run Forecast Now'; btn.disabled = false;
+    document.getElementById('lastRun').textContent = new Date().toLocaleTimeString('en-IN', {timeStyle:'short'});
+    btn.innerHTML  = '<i class="fas fa-rotate"></i> Run Forecast Now';
+    btn.disabled   = false;
   }, 2000);
 }
 
+// ── CSV upload feedback ────────────────────────────────────
 function handleUpload(input) {
   if (input.files[0]) {
     const card = input.closest('.upload-card');
     card.querySelector('strong').textContent = '✓ ' + input.files[0].name;
-    card.querySelector('p').textContent = 'File ready';
+    card.querySelector('p').textContent      = 'File ready';
   }
 }
 
+// ── Live appliance toggle ──────────────────────────────────
 let liveInt = null;
 function toggleLive(cb) {
   document.getElementById('liveLabel').textContent = cb.checked ? 'ON' : 'OFF';
   document.querySelectorAll('.app-item').forEach(i => i.classList.toggle('live', cb.checked));
   if (cb.checked) {
     liveInt = setInterval(() => {
-      document.getElementById('acVal').textContent    = (1.8+Math.random()*0.6).toFixed(1)+' kW';
-      document.getElementById('geyserVal').textContent= (1.8+Math.random()*0.5).toFixed(1)+' kW';
-      document.getElementById('pcVal').textContent    = (11+Math.random()*3).toFixed(1)+' kW';
+      document.getElementById('acVal').textContent     = (1.8 + Math.random() * 0.6).toFixed(1) + ' kW';
+      document.getElementById('geyserVal').textContent = (1.8 + Math.random() * 0.5).toFixed(1) + ' kW';
+      document.getElementById('pcVal').textContent     = (11  + Math.random() * 3.0).toFixed(1) + ' kW';
     }, 2000);
-  } else { clearInterval(liveInt); }
+  } else {
+    clearInterval(liveInt);
+  }
 }
 </script>
-</body></html>
+</body>
+</html>

@@ -11,6 +11,9 @@ const WW = {
 };
 
 // ── Find the Dashboard root folder from any page depth ─────
+// Works for both:
+//   /Project-root/Dashboard/dashboard.html       → /Project-root/Dashboard/
+//   /Project-root/Dashboard/pages/billing.html   → /Project-root/Dashboard/
 function getDashboardRoot() {
   const path = window.location.pathname;
   if (path.includes('/pages/')) {
@@ -19,12 +22,21 @@ function getDashboardRoot() {
   return path.substring(0, path.lastIndexOf('/') + 1);
 }
 
-// ── Sign out redirect → welcome page ──────────────────────
+// ── Redirect to welcome page on sign-out / auth failure ────
+// Folder layout:
+//   Watt-Wise/
+//     welcome.html                              ← target
+//     Project-root/
+//       Dashboard/                             ← getDashboardRoot() returns this
+//         dashboard.html
+//         pages/  billing.html  live.html …
+//       public/
+//         index.html  register.html
+//
+// From /Project-root/Dashboard/ we go UP TWO levels to reach /welcome.html
 function getPublicLogin() {
   const root = getDashboardRoot();
-  // getDashboardRoot() always returns .../Dashboard/
-  // welcome.html is one level up at Project-root/
-  return root + '../welcome.html';
+  return root + '../../welcome.html';
 }
 
 // ── Auth guard ─────────────────────────────────────────────
@@ -36,36 +48,15 @@ function authGuard() {
   return true;
 }
 
-// ── Role helpers ───────────────────────────────────────────
-function isAdmin() {
-  return localStorage.getItem('role') === 'admin';
-}
-
-function getRoleBadge() {
-  return isAdmin()
-    ? '<span style="font-size:0.58rem;padding:1px 7px;background:rgba(0,255,65,0.12);border:1px solid var(--accent3);color:var(--accent2);letter-spacing:2px;">ADMIN</span>'
-    : '<span style="font-size:0.58rem;padding:1px 7px;background:rgba(0,170,255,0.08);border:1px solid #004466;color:#0099cc;letter-spacing:2px;">VIEW ONLY</span>';
-}
-
 // ── Sidebar init ───────────────────────────────────────────
 function initSidebar(activeId) {
   if (!authGuard()) return;
-  const u = localStorage.getItem('username') || 'Admin';
+
+  const u        = localStorage.getItem('username') || 'Admin';
   const avatarEl = document.getElementById('avatarEl');
   const userEl   = document.getElementById('sidebarUser');
-  const roleEl   = document.getElementById('sidebarRole');
   if (avatarEl) avatarEl.textContent = u[0].toUpperCase();
   if (userEl)   userEl.textContent   = u;
-  if (roleEl)   roleEl.innerHTML     = getRoleBadge();
-
-  if (!isAdmin()) {
-    document.querySelectorAll('.nav-item[data-page="upload"], .nav-item[data-page="export"]')
-      .forEach(el => {
-        el.style.opacity = '0.35';
-        el.style.pointerEvents = 'none';
-        el.title = 'Admin access required';
-      });
-  }
 
   document.querySelectorAll('.nav-item[data-page]').forEach(el => {
     el.classList.toggle('active', el.dataset.page === activeId);
@@ -83,7 +74,7 @@ function initSidebar(activeId) {
 
 // ── Navigation ─────────────────────────────────────────────
 function navigate(page) {
-  const root = getDashboardRoot();  // e.g. /Project-root/Dashboard/
+  const root = getDashboardRoot(); // e.g. /Project-root/Dashboard/
   const map = {
     dashboard:   root + 'dashboard.html',
     live:        root + 'pages/live.html',
@@ -103,51 +94,94 @@ function navigate(page) {
   if (map[page]) {
     window.location.href = map[page];
   } else {
-    console.warn('Unknown page:', page);
+    console.warn('[WattWise] Unknown page key:', page);
   }
 }
 
-// ── Chart helpers ──────────────────────────────────────────
+// ── Chart defaults ─────────────────────────────────────────
 const CHART_DEFAULTS = {
   responsive: true,
   maintainAspectRatio: false,
-  interaction: { mode:'index', intersect:false },
+  interaction: { mode: 'index', intersect: false },
   scales: {
-    y: { beginAtZero:true, ticks:{color:'#007a1f',font:{family:"'Share Tech Mono'",size:10}}, grid:{color:'rgba(0,255,65,0.06)'} },
-    x: { ticks:{color:'#007a1f',font:{family:"'Share Tech Mono'",size:10}}, grid:{display:false} }
+    y: {
+      beginAtZero: true,
+      ticks: { color: '#007a1f', font: { family: "'Share Tech Mono'", size: 10 } },
+      grid:  { color: 'rgba(0,255,65,0.06)' }
+    },
+    x: {
+      ticks: { color: '#007a1f', font: { family: "'Share Tech Mono'", size: 10 } },
+      grid:  { display: false }
+    }
   },
   plugins: {
-    legend: { labels:{ color:'#00cc33', font:{family:"'Share Tech Mono'",size:11}, boxWidth:12 } },
-    tooltip: { backgroundColor:'#010d01', borderColor:'#00551a', borderWidth:1, titleColor:'#00ff41', bodyColor:'#00cc33', titleFont:{family:"'Share Tech Mono'"}, bodyFont:{family:"'Share Tech Mono'"} }
+    legend: {
+      labels: { color: '#00cc33', font: { family: "'Share Tech Mono'", size: 11 }, boxWidth: 12 }
+    },
+    tooltip: {
+      backgroundColor: '#010d01',
+      borderColor:     '#00551a',
+      borderWidth:     1,
+      titleColor:      '#00ff41',
+      bodyColor:       '#00cc33',
+      titleFont: { family: "'Share Tech Mono'" },
+      bodyFont:  { family: "'Share Tech Mono'" }
+    }
   }
 };
 
+// ── Chart helpers ──────────────────────────────────────────
 function lineChart(id, labels, datasets) {
-  const ctx = document.getElementById(id);
-  if (!ctx) return;
-  return new Chart(ctx.getContext('2d'), { type:'line', data:{labels, datasets}, options:JSON.parse(JSON.stringify(CHART_DEFAULTS)) });
+  const el = document.getElementById(id);
+  if (!el) { console.warn('[WattWise] lineChart: canvas #' + id + ' not found'); return null; }
+  return new Chart(el.getContext('2d'), {
+    type: 'line',
+    data: { labels, datasets },
+    options: JSON.parse(JSON.stringify(CHART_DEFAULTS))
+  });
 }
 
 function barChart(id, labels, datasets) {
-  const ctx = document.getElementById(id);
-  if (!ctx) return;
-  return new Chart(ctx.getContext('2d'), { type:'bar', data:{labels, datasets}, options:JSON.parse(JSON.stringify(CHART_DEFAULTS)) });
+  const el = document.getElementById(id);
+  if (!el) { console.warn('[WattWise] barChart: canvas #' + id + ' not found'); return null; }
+  return new Chart(el.getContext('2d'), {
+    type: 'bar',
+    data: { labels, datasets },
+    options: JSON.parse(JSON.stringify(CHART_DEFAULTS))
+  });
 }
 
 function dataset(label, data, color, dashed) {
-  return { label, data, borderColor:color, backgroundColor:color.replace(')',',0.10)').replace('rgb','rgba'), tension:0.35, fill:true, borderDash:dashed?[5,4]:[], pointBackgroundColor:color, pointRadius:4, spanGaps:false };
+  return {
+    label,
+    data,
+    borderColor:      color,
+    backgroundColor:  color.replace(')', ',0.10)').replace('rgb', 'rgba'),
+    tension:          0.35,
+    fill:             true,
+    borderDash:       dashed ? [5, 4] : [],
+    pointBackgroundColor: color,
+    pointRadius:      4,
+    spanGaps:         false
+  };
 }
 
 function barDataset(label, data, color) {
-  return { label, data, backgroundColor:color.replace(')',',0.70)').replace('rgb','rgba'), borderColor:color, borderWidth:1 };
+  return {
+    label,
+    data,
+    backgroundColor: color.replace(')', ',0.70)').replace('rgb', 'rgba'),
+    borderColor:     color,
+    borderWidth:     1
+  };
 }
 
 function calcBill(kwh, rate) { return (kwh * rate).toFixed(2); }
 
 function exportCSV(rows, filename) {
   const csv = rows.map(r => r.join(',')).join('\n');
-  const a = document.createElement('a');
-  a.href = 'data:text/csv,' + encodeURIComponent(csv);
+  const a   = document.createElement('a');
+  a.href     = 'data:text/csv,' + encodeURIComponent(csv);
   a.download = filename;
   a.click();
 }
@@ -158,19 +192,21 @@ const BUDGET_KEY = 'ww_budgets';
 function getBudgets() {
   try {
     return JSON.parse(localStorage.getItem(BUDGET_KEY)) || {};
-  } catch { return {}; }
+  } catch {
+    return {};
+  }
 }
 
 function saveBudget(key, value) {
   const b = getBudgets();
-  b[key] = value;
+  b[key]  = value;
   localStorage.setItem(BUDGET_KEY, JSON.stringify(b));
 }
 
 function getBudgetStatus(spent, budget) {
   if (!budget || budget <= 0) return null;
   const pct = (spent / budget) * 100;
-  if (pct >= 100) return { label: 'OVER BUDGET', cls: 'badge-bad',  pct };
-  if (pct >= 80)  return { label: 'NEAR LIMIT',  cls: 'badge-warn', pct };
-  return               { label: 'WITHIN BUDGET', cls: 'badge-ok',   pct };
+  if (pct >= 100) return { label: 'OVER BUDGET',   cls: 'badge-bad',  pct };
+  if (pct >= 80)  return { label: 'NEAR LIMIT',    cls: 'badge-warn', pct };
+  return                 { label: 'WITHIN BUDGET', cls: 'badge-ok',   pct };
 }

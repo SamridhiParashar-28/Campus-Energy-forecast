@@ -9,7 +9,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // ── Password visibility toggle ─────────────────────────
   if (toggle && passInput) {
     toggle.addEventListener("click", () => {
-      const show = passInput.type === "password";
+      const show     = passInput.type === "password";
       passInput.type = show ? "text" : "password";
       toggle.classList.toggle("fa-eye",      !show);
       toggle.classList.toggle("fa-eye-slash", show);
@@ -24,19 +24,20 @@ document.addEventListener("DOMContentLoaded", () => {
     clearMessage();
 
     const username = document.getElementById("username")?.value?.trim();
-    const password = passInput?.value;
+    const password = passInput?.value?.trim();
 
-    if (!username || !password)
+    if (!username || !password) {
       return showError("Please enter your username and password.");
+    }
 
     submitBtn.disabled    = true;
     submitBtn.textContent = "Signing in…";
 
     try {
-      const res = await fetch("http://localhost:5000/login", {
+      const res  = await fetch("http://localhost:5000/login", {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ username, password }),
+        body:    JSON.stringify({ username, password })
       });
 
       const data = await res.json();
@@ -45,17 +46,20 @@ document.addEventListener("DOMContentLoaded", () => {
         localStorage.clear();
         localStorage.setItem("isLoggedIn", "true");
         localStorage.setItem("username",   data.username);
-        localStorage.setItem("role",       data.role);      // ← real role from server
-        localStorage.setItem("token",      data.token);     // ← real JWT
+        localStorage.setItem("token",      data.token);
 
         showSuccess("Login successful! Redirecting…");
+
+        // index.html is at: Watt-Wise/Project-root/public/index.html
+        // dashboard.html is: Watt-Wise/Project-root/Dashboard/dashboard.html
+        // From public/ → go up one level (..) → into Dashboard/
         setTimeout(() => {
-          window.location.replace("../../Dashboard/dashboard.html");
-        }, 900);
+          window.location.replace("../Dashboard/dashboard.html");
+        }, 1000);
+
       } else {
         showError(data.message || "Invalid username or password.");
       }
-
     } catch {
       showError("Cannot connect to server. Is the backend running on port 5000?");
     } finally {
@@ -70,11 +74,13 @@ document.addEventListener("DOMContentLoaded", () => {
     errorEl.textContent   = msg;
     errorEl.style.display = "block";
   }
+
   function showSuccess(msg) {
     errorEl.style.color   = "#00ff41";
     errorEl.textContent   = msg;
     errorEl.style.display = "block";
   }
+
   function clearMessage() {
     errorEl.style.display = "none";
     errorEl.textContent   = "";
