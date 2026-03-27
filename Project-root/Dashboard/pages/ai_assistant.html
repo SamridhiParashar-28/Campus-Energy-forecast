@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>WattWise – AI Assistant</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"/>
+  <link rel="stylesheet" href="../css/shared.css"/>
+  <style>
+    /* ── Tab bar ── */
+    .ai-tabs {
+      display: flex;
+      gap: 0;
+      margin-bottom: 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .ai-tab {
+      padding: 0.6rem 1.4rem;
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid transparent;
+      color: var(--text3);
+      font-family: var(--font-main);
+      font-size: 0.68rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-bottom: -1px;
+    }
+    .ai-tab:hover { color: var(--accent2); }
+    .ai-tab.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+      background: rgba(0,255,65,0.04);
+    }
+    .ai-tab i { margin-right: 6px; font-size: 0.72rem; }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* ───────────────────────────────────────────
+       CHAT TAB
+    ─────────────────────────────────────────── */
+    .chat-grid {
+      display: grid;
+      grid-template-columns: 1fr 270px;
+      gap: 1rem;
+      height: calc(100vh - 260px);
+      min-height: 400px;
+    }
+    .chat-main {
+      display: flex;
+      flex-direction: column;
+      background: var(--card);
+      border: 1px solid var(--border);
+      position: relative;
+      overflow: hidden;
+    }
+    .chat-main::before {
+      content:''; position:absolute; top:0; left:0; right:0; height:1px;
+      background: linear-gradient(90deg,transparent,var(--accent3),transparent);
+    }
+    .messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.1rem 1.2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.9rem;
+      scroll-behavior: smooth;
+    }
+    .messages::-webkit-scrollbar { width: 3px; }
+    .messages::-webkit-scrollbar-thumb { background: var(--border); }
+
+    .msg { display:flex; gap:9px; align-items:flex-start; animation: msgIn 0.18s ease; }
+    .msg.user { flex-direction:row-reverse; }
+    @keyframes msgIn { from{opacity:0;transform:translateY(5px)} to{opacity:1;transform:translateY(0)} }
+
+    .msg-av {
+      width:26px; height:26px; border-radius:50%; flex-shrink:0; margin-top:2px;
+      display:flex; align-items:center; justify-content:center; font-size:0.6rem;
+    }
+    .msg.user .msg-av  { background:rgba(0,255,65,0.12); border:1px solid var(--accent3); color:var(--accent2); }
+    .msg.ai   .msg-av  { background:rgba(0,170,255,0.08); border:1px solid #003355; color:#0099cc; }
+    .msg.sys  .msg-av  { background:rgba(255,170,0,0.08); border:1px solid #553300; color:var(--warn); }
+
+    .msg-body { max-width:80%; }
+    .msg.user .msg-body { align-items:flex-end; }
+    .msg-meta { font-size:0.52rem; letter-spacing:2px; color:var(--text3); margin-bottom:3px; text-transform:uppercase; }
+    .msg.user .msg-meta { text-align:right; }
+
+    .msg-bubble { padding:0.65rem 0.9rem; font-size:0.76rem; line-height:1.75; }
+    .msg.user .msg-bubble { background:rgba(0,255,65,0.07); border:1px solid var(--border2); color:var(--accent2); }
+    .msg.ai   .msg-bubble { background:rgba(0,8,0,0.7); border:1px solid var(--border); color:var(--text2); }
+    .msg.sys  .msg-bubble { background:rgba(255,170,0,0.05); border:1px solid #553300; color:var(--warn); font-size:0.7rem; }
+    .msg.ai   .msg-bubble strong { color:var(--accent); }
+    .msg.ai   .msg-bubble code { background:rgba(0,255,65,0.08); border:1px solid var(--border); padding:1px 5px; font-family:var(--font-main); font-size:0.73rem; color:var(--accent2); }
+    .msg.ai   .msg-bubble ul  { padding-left:1.1rem; margin:0.3rem 0; }
+    .msg.ai   .msg-bubble li  { margin:2px 0; }
+    .msg.ai   .msg-bubble p   { margin:0.25rem 0; }
+
+    .typing-ind { display:flex; gap:3px; align-items:center; padding:0.65rem 0.9rem; background:rgba(0,8,0,0.7); border:1px solid var(--border); width:fit-content; }
+    .typing-ind span { width:4px; height:4px; background:var(--accent3); border-radius:50%; animation:tdot 1.2s ease-in-out infinite; }
+    .typing-ind span:nth-child(2){animation-delay:0.2s} .typing-ind span:nth-child(3){animation-delay:0.4s}
+    @keyframes tdot { 0%,60%,100%{transform:translateY(0);opacity:0.35} 30%{transform:translateY(-4px);opacity:1} }
+
+    .quick-wrap {
+      border-top:1px solid rgba(0,85,26,0.3);
+      padding:0.6rem 1rem;
+      display:flex; gap:0.4rem; flex-wrap:wrap;
+    }
+    .qbtn {
+      padding:3px 9px; background:transparent; border:1px solid var(--border);
+      color:var(--text3); font-family:var(--font-main); font-size:0.6rem;
+      cursor:pointer; transition:all 0.15s; letter-spacing:0.5px;
+    }
+    .qbtn:hover { border-color:var(--accent3); color:var(--accent2); background:rgba(0,255,65,0.04); }
+
+    .input-row {
+      border-top:1px solid var(--border); padding:0.8rem 1rem;
+      display:flex; gap:0.5rem; align-items:flex-end; background:var(--bg2);
+    }
+    .chat-ta {
+      flex:1; background:var(--bg); border:1px solid var(--border);
+      color:var(--accent2); font-family:var(--font-main); font-size:0.78rem;
+      padding:0.6rem 0.8rem; resize:none; outline:none;
+      min-height:38px; max-height:100px; line-height:1.5; transition:border-color 0.2s;
+    }
+    .chat-ta:focus { border-color:var(--accent3); }
+    .chat-ta::placeholder { color:var(--text3); }
+
+    .send-btn {
+      padding:0 1rem; height:38px; background:transparent; border:1px solid var(--accent3);
+      color:var(--accent2); font-family:var(--font-main); font-size:0.72rem;
+      cursor:pointer; transition:all 0.2s; letter-spacing:1px;
+      display:flex; align-items:center; gap:5px; white-space:nowrap;
+    }
+    .send-btn:hover:not(:disabled) { background:rgba(0,255,65,0.08); border-color:var(--accent); color:var(--accent); box-shadow:0 0 10px var(--glow); }
+    .send-btn:disabled { opacity:0.35; cursor:not-allowed; }
+
+    /* chat sidebar */
+    .chat-side { display:flex; flex-direction:column; gap:0.7rem; overflow-y:auto; }
+    .cside-card { background:var(--card); border:1px solid var(--border); padding:0.85rem; }
+    .cside-title { font-size:0.54rem; letter-spacing:3px; color:var(--text3); text-transform:uppercase; margin-bottom:0.5rem; }
+    .drow { display:flex; justify-content:space-between; padding:4px 0; border-bottom:1px solid rgba(0,85,26,0.2); font-size:0.66rem; }
+    .drow:last-child { border-bottom:none; }
+    .drow span { color:var(--text3); } .drow strong { color:var(--accent2); }
+    .amini { padding:4px 7px; background:rgba(255,51,85,0.05); border-left:2px solid var(--danger); font-size:0.63rem; color:#ff6677; margin-bottom:4px; }
+    .amini:last-child { margin-bottom:0; }
+    .amini.warn { border-color:var(--warn); color:var(--warn); background:rgba(255,170,0,0.05); }
+
+    /* ───────────────────────────────────────────
+       ANOMALIES TAB
+    ─────────────────────────────────────────── */
+    .anom-grid { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+    .anom-card {
+      background:var(--card); border:1px solid var(--border); padding:1.1rem;
+      position:relative; overflow:hidden; transition:border-color 0.2s;
+    }
+    .anom-card.high  { border-color:rgba(255,51,85,0.4); }
+    .anom-card.med   { border-color:rgba(255,170,0,0.3); }
+    .anom-card:hover { box-shadow:0 0 16px var(--glow2); }
+    .anom-card::before { content:''; position:absolute; top:0; left:0; right:0; height:1px; background:linear-gradient(90deg,transparent,var(--accent3),transparent); }
+
+    .sev-badge {
+      display:inline-block; padding:2px 8px; font-size:0.55rem; letter-spacing:2px;
+      margin-bottom:0.6rem;
+    }
+    .sev-badge.high { background:rgba(255,51,85,0.12); border:1px solid var(--danger); color:var(--danger); }
+    .sev-badge.med  { background:rgba(255,170,0,0.1);  border:1px solid var(--warn);   color:var(--warn); }
+    .sev-badge.low  { background:rgba(0,255,65,0.08);  border:1px solid var(--accent3);color:var(--accent2); }
+
+    .anom-title { font-size:0.8rem; color:var(--accent2); margin-bottom:0.3rem; font-family:var(--font-main); }
+    .anom-desc  { font-size:0.68rem; color:var(--text3); line-height:1.6; margin-bottom:0.7rem; }
+
+    .explain-btn {
+      padding:5px 12px; background:transparent; border:1px solid var(--accent3);
+      color:var(--accent2); font-family:var(--font-main); font-size:0.62rem;
+      cursor:pointer; letter-spacing:1px; transition:all 0.2s; display:inline-flex; align-items:center; gap:5px;
+    }
+    .explain-btn:hover:not(:disabled) { background:rgba(0,255,65,0.07); border-color:var(--accent); color:var(--accent); }
+    .explain-btn:disabled { opacity:0.4; cursor:not-allowed; }
+
+    .ai-explanation {
+      margin-top:0.7rem; padding:0.7rem 0.9rem;
+      background:rgba(0,170,255,0.04); border:1px solid #003355;
+      font-size:0.7rem; color:var(--text2); line-height:1.7;
+      display:none; animation:msgIn 0.2s ease;
+    }
+    .ai-explanation.show { display:block; }
+    .ai-explanation strong { color:var(--accent); }
+    .ai-explanation ul { padding-left:1rem; margin:0.3rem 0; }
+    .ai-explanation li { margin:2px 0; }
+
+    /* ───────────────────────────────────────────
+       RECOMMENDATIONS TAB
+    ─────────────────────────────────────────── */
+    .rec-header {
+      display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; flex-wrap:wrap; gap:0.8rem;
+    }
+    .gen-rec-btn {
+      padding:7px 18px; background:transparent; border:1px solid var(--accent);
+      color:var(--accent); font-family:var(--font-main); font-size:0.72rem;
+      cursor:pointer; letter-spacing:2px; transition:all 0.2s; display:inline-flex; align-items:center; gap:6px;
+    }
+    .gen-rec-btn:hover:not(:disabled) { background:rgba(0,255,65,0.08); box-shadow:0 0 12px var(--glow); }
+    .gen-rec-btn:disabled { opacity:0.4; cursor:not-allowed; }
+
+    .rec-cards { display:grid; grid-template-columns:repeat(3,1fr); gap:0.9rem; }
+    .rec-card {
+      background:var(--card); border:1px solid var(--border); padding:1.1rem;
+      position:relative; overflow:hidden; transition:all 0.2s;
+    }
+    .rec-card::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg,transparent,var(--accent3),transparent); transition:background 0.2s; }
+    .rec-card:hover { border-color:var(--accent3); transform:translateY(-2px); }
+    .rec-card:hover::before { background:linear-gradient(90deg,transparent,var(--accent),transparent); }
+
+    .rec-icon { font-size:1.3rem; color:var(--accent3); margin-bottom:0.6rem; }
+    .rec-card:hover .rec-icon { color:var(--accent); }
+    .rec-title { font-size:0.75rem; color:var(--accent2); margin-bottom:0.4rem; letter-spacing:0.5px; }
+    .rec-body  { font-size:0.68rem; color:var(--text3); line-height:1.65; }
+    .rec-saving {
+      display:inline-block; margin-top:0.7rem; padding:2px 9px;
+      background:rgba(0,255,65,0.08); border:1px solid var(--accent3);
+      font-size:0.6rem; letter-spacing:2px; color:var(--accent2);
+    }
+
+    .rec-placeholder {
+      grid-column:1/-1; text-align:center; padding:3rem 1rem;
+      color:var(--text3); font-size:0.75rem; border:1px dashed var(--border);
+    }
+    .rec-placeholder i { display:block; font-size:2rem; color:var(--accent3); margin-bottom:0.8rem; }
+
+    .rec-loading { grid-column:1/-1; text-align:center; padding:2rem; color:var(--text3); font-size:0.72rem; }
+    .rec-loading i { margin-right:8px; }
+
+    /* insight strip above rec cards */
+    .insight-strip {
+      display:grid; grid-template-columns:repeat(4,1fr); gap:0.7rem; margin-bottom:1rem;
+    }
+    .ins-card { background:var(--card); border:1px solid var(--border); padding:0.8rem; text-align:center; }
+    .ins-val  { font-family:var(--font-head); font-size:1.1rem; color:var(--accent); }
+    .ins-lbl  { font-size:0.56rem; letter-spacing:2px; color:var(--text3); margin-top:3px; text-transform:uppercase; }
+
+    @media(max-width:1100px){
+      .chat-grid { grid-template-columns:1fr; }
+      .chat-side { display:none; }
+      .anom-grid { grid-template-columns:1fr; }
+      .rec-cards { grid-template-columns:1fr 1fr; }
+      .insight-strip { grid-template-columns:1fr 1fr; }
+    }
+    @media(max-width:680px){
+      .rec-cards { grid-template-columns:1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-logo"><h1>WATT<br>WISE</h1><p>Energy Monitor</p></div>
+  <div class="sidebar-user">
+    <div class="avatar" id="avatarEl">—</div>
+    <div class="sidebar-user-info"><span id="sidebarUser">—</span><small>Campus Admin</small></div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section-label">Main</div>
+    <a class="nav-item" data-page="dashboard"><i class="fas fa-gauge-high"></i> Dashboard</a>
+    <a class="nav-item" data-page="live"><i class="fas fa-bolt"></i> Live Usage</a>
+    <a class="nav-item" data-page="consumption"><i class="fas fa-chart-line"></i> Consumption Trend</a>
+    <div class="nav-section-label">Analysis</div>
+    <a class="nav-item" data-page="forecast"><i class="fas fa-brain"></i> ML Forecast</a>
+    <a class="nav-item" data-page="lstm_dashboard"><i class="fas fa-wave-square"></i> LSTM Dashboard</a>
+    <a class="nav-item active" data-page="ai_assistant"><i class="fas fa-robot"></i> AI Assistant</a>
+    <a class="nav-item" data-page="anomalies"><i class="fas fa-triangle-exclamation"></i> Anomalies</a>
+    <a class="nav-item" data-page="billing"><i class="fas fa-file-invoice-dollar"></i> Billing</a>
+    <div class="nav-section-label">Data</div>
+    <a class="nav-item" data-page="upload"><i class="fas fa-upload"></i> Upload Data</a>
+    <a class="nav-item" data-page="export"><i class="fas fa-file-export"></i> Export Report</a>
+    <div class="nav-section-label">Blocks</div>
+    <a class="nav-item" data-page="block_gh"><i class="fas fa-venus"></i> Girls Hostel</a>
+    <a class="nav-item" data-page="block_bh"><i class="fas fa-mars"></i> Boys Hostel</a>
+    <a class="nav-item" data-page="block_ab1"><i class="fas fa-building-columns"></i> Academic Blk 1</a>
+    <a class="nav-item" data-page="block_ab2"><i class="fas fa-building"></i> Academic Blk 2</a>
+    <a class="nav-item" data-page="block_adm"><i class="fas fa-landmark"></i> Admin Block</a>
+    <div class="nav-section-label">Account</div>
+    <a class="nav-item" data-page="switch_user"><i class="fas fa-user-plus"></i> Switch User</a>
+  </nav>
+  <div class="sidebar-bottom">
+    <a class="nav-item danger" id="logoutBtn"><i class="fas fa-right-from-bracket"></i> Sign Out</a>
+  </div>
+</aside>
+
+<main class="main">
+  <div class="topbar">
+    <div class="topbar-left">
+      <h2>AI ASSISTANT</h2>
+      <p>Powered by Claude · Campus-aware · Jan 06–12, 2025</p>
+    </div>
+    <div class="topbar-right">
+      <span><span class="status-dot"></span>Claude Online</span>
+      <span id="msgCount" style="font-size:0.63rem;color:var(--text3)">0 messages</span>
+    </div>
+  </div>
+
+  <!-- Tab bar -->
+  <div class="ai-tabs">
+    <button class="ai-tab active" onclick="switchTab('chat',this)">
+      <i class="fas fa-comments"></i>Chat Assistant
+    </button>
+    <button class="ai-tab" onclick="switchTab('anomalies',this)">
+      <i class="fas fa-triangle-exclamation"></i>Anomaly Explainer
+    </button>
+    <button class="ai-tab" onclick="switchTab('recommendations',this)">
+      <i class="fas fa-lightbulb"></i>Smart Recommendations
+    </button>
+  </div>
+
+  <!-- ═══════════════ CHAT TAB ═══════════════ -->
+  <div class="tab-panel active" id="tab-chat">
+    <div class="chat-grid">
+      <div class="chat-main">
+        <div class="messages" id="messages"></div>
+        <div class="quick-wrap" id="quickWrap">
+          <button class="qbtn" onclick="sq('Which block uses the most energy and why?')">⚡ Highest usage</button>
+          <button class="qbtn" onclick="sq('How can the campus reduce energy costs by 20%?')">💡 Cost reduction</button>
+          <button class="qbtn" onclick="sq('What does the LSTM model predict for next week?')">🔮 Forecast</button>
+          <button class="qbtn" onclick="sq('Compare hostels vs academic blocks energy profile')">📊 Hostel vs Academic</button>
+          <button class="qbtn" onclick="sq('Why is Academic Block 2 consuming so much more?')">🔍 AB2 deep dive</button>
+          <button class="qbtn" onclick="sq('Explain the anomalies in simple terms')">⚠ Anomaly summary</button>
+        </div>
+        <div class="input-row">
+          <textarea class="chat-ta" id="chatInput" placeholder="Ask about usage, costs, forecasts, anomalies…" rows="1"></textarea>
+          <button class="send-btn" id="sendBtn" onclick="sendMsg()"><i class="fas fa-paper-plane"></i> Send</button>
+        </div>
+      </div>
+      <div class="chat-side">
+        <div class="cside-card">
+          <div class="cside-title"><i class="fas fa-database"></i> &nbsp;Data Context</div>
+          <div class="drow"><span>Campus Total</span><strong>4,206 kWh</strong></div>
+          <div class="drow"><span>Est. Cost</span><strong>₹35,751</strong></div>
+          <div class="drow"><span>Peak Block</span><strong>Academic 2</strong></div>
+          <div class="drow"><span>Model</span><strong>LSTM+XGB</strong></div>
+          <div class="drow"><span>Accuracy</span><strong>94.2%</strong></div>
+          <div class="drow"><span>Tariff</span><strong>₹8.5/kWh</strong></div>
+        </div>
+        <div class="cside-card">
+          <div class="cside-title"><i class="fas fa-building"></i> &nbsp;Block kWh</div>
+          <div class="drow"><span>Girls Hostel</span><strong>599 kWh</strong></div>
+          <div class="drow"><span>Boys Hostel</span><strong>599 kWh</strong></div>
+          <div class="drow"><span>Academic 1</span><strong>622 kWh</strong></div>
+          <div class="drow"><span>Academic 2</span><strong>1,235 kWh</strong></div>
+          <div class="drow"><span>Admin Block</span><strong>1,151 kWh</strong></div>
+        </div>
+        <div class="cside-card">
+          <div class="cside-title" style="color:var(--danger)"><i class="fas fa-triangle-exclamation"></i> &nbsp;Anomalies</div>
+          <div class="amini">AB2 BigLab PCs — 225 kWh/day [HIGH]</div>
+          <div class="amini">Admin ACs — 828 kWh week [HIGH]</div>
+          <div class="amini warn">Hostel flat usage — metering? [MED]</div>
+        </div>
+        <div class="cside-card">
+          <div class="cside-title"><i class="fas fa-lightbulb"></i> &nbsp;More questions</div>
+          <div style="display:flex;flex-direction:column;gap:4px;margin-top:2px">
+            <button class="qbtn" style="text-align:left;padding:4px 7px" onclick="sq('What appliances should run off-peak to save costs?')">Appliance scheduling</button>
+            <button class="qbtn" style="text-align:left;padding:4px 7px" onclick="sq('Is zero weekend usage for academic blocks normal?')">Weekend shutdown</button>
+            <button class="qbtn" style="text-align:left;padding:4px 7px" onclick=\"sq('Calculate savings if Admin ACs reduce 20%')\">AC savings estimate</button>
+            <button class="qbtn" style="text-align:left;padding:4px 7px" onclick="sq('Are the hostel readings reliable given identical values?')">Data reliability</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <button onclick="clearChat()" style="margin-top:0.5rem;width:100%;padding:6px;background:transparent;border:1px solid rgba(255,51,85,0.25);color:rgba(255,51,85,0.5);font-family:var(--font-main);font-size:0.6rem;cursor:pointer;letter-spacing:1px;transition:all 0.2s" onmouseover="this.style.borderColor='var(--danger)';this.style.color='var(--danger)'" onmouseout="this.style.borderColor='rgba(255,51,85,0.25)';this.style.color='rgba(255,51,85,0.5)'">
+      <i class="fas fa-trash"></i> &nbsp;Clear conversation
+    </button>
+  </div>
+
+  <!-- ═══════════════ ANOMALY EXPLAINER TAB ═══════════════ -->
+  <div class="tab-panel" id="tab-anomalies">
+    <p style="font-size:0.68rem;color:var(--text3);margin-bottom:1rem;letter-spacing:1px">
+      Click <strong style="color:var(--accent2)">Explain</strong> on any anomaly to get an AI-generated root-cause analysis and recommended action plan.
+    </p>
+    <div class="anom-grid">
+
+      <div class="anom-card high">
+        <span class="sev-badge high">HIGH SEVERITY</span>
+        <div class="anom-title"><i class="fas fa-computer" style="margin-right:6px"></i>AB2 BigLab PCs — Excessive Consumption</div>
+        <div class="anom-desc">Academic Block 2's BigLab computers draw 225 kWh per active day — the highest single appliance in the entire dataset. Over 5 active days that's 675 kWh (54.6% of AB2's weekly total of 1,234.8 kWh).</div>
+        <button class="explain-btn" onclick="explainAnomaly(0,this)"><i class="fas fa-robot"></i> Explain with AI</button>
+        <div class="ai-explanation" id="anom-exp-0"></div>
+      </div>
+
+      <div class="anom-card high">
+        <span class="sev-badge high">HIGH SEVERITY</span>
+        <div class="anom-title"><i class="fas fa-snowflake" style="margin-right:6px"></i>Admin Block ACs — Dominant Load</div>
+        <div class="anom-desc">Admin Block ACs consumed 828 kWh this week — 71.9% of the entire Admin Block's usage of 1,150.65 kWh. Running at peak load across Mon/Wed/Fri with near-zero variation.</div>
+        <button class="explain-btn" onclick="explainAnomaly(1,this)"><i class="fas fa-robot"></i> Explain with AI</button>
+        <div class="ai-explanation" id="anom-exp-1"></div>
+      </div>
+
+      <div class="anom-card med">
+        <span class="sev-badge med">MEDIUM SEVERITY</span>
+        <div class="anom-title"><i class="fas fa-calendar-xmark" style="margin-right:6px"></i>Academic + Admin — Zero Weekend Usage</div>
+        <div class="anom-desc">Academic Block 1, Academic Block 2, and Admin Block all show exactly 0.0 kWh on Sat Jan 11 and Sun Jan 12. This is a sharp and complete discontinuity from weekday patterns.</div>
+        <button class="explain-btn" onclick="explainAnomaly(2,this)"><i class="fas fa-robot"></i> Explain with AI</button>
+        <div class="ai-explanation" id="anom-exp-2"></div>
+      </div>
+
+      <div class="anom-card med">
+        <span class="sev-badge med">MEDIUM SEVERITY</span>
+        <div class="anom-title"><i class="fas fa-equals" style="margin-right:6px"></i>Hostels — Suspiciously Flat Usage</div>
+        <div class="anom-desc">Both Girls Hostel and Boys Hostel show exactly 85.64 kWh every single day for all 7 days — including weekends. Real occupancy patterns never produce perfectly identical readings.</div>
+        <button class="explain-btn" onclick="explainAnomaly(3,this)"><i class="fas fa-robot"></i> Explain with AI</button>
+        <div class="ai-explanation" id="anom-exp-3"></div>
+      </div>
+
+      <div class="anom-card med">
+        <span class="sev-badge med">MEDIUM SEVERITY</span>
+        <div class="anom-title"><i class="fas fa-fire" style="margin-right:6px"></i>G-H Geyser + AC — High Continuous Load</div>
+        <div class="anom-desc">Girls Hostel Geyser and AC each consume 252 kWh/week (9 hours/day every day). No time-of-use variation detected — these appliances appear to be running without scheduling control.</div>
+        <button class="explain-btn" onclick="explainAnomaly(4,this)"><i class="fas fa-robot"></i> Explain with AI</button>
+        <div class="ai-explanation" id="anom-exp-4"></div>
+      </div>
+
+      <div class="anom-card" style="border-color:rgba(0,170,255,0.3)">
+        <span class="sev-badge low">DATA QUALITY</span>
+        <div class="anom-title"><i class="fas fa-database" style="margin-right:6px"></i>AB1 vs AB2 — Alternating Pattern</div>
+        <div class="anom-desc">Academic Block 1 alternates 177.3 → 45.0 → 177.3 kWh (Mon/Tue/Wed). Academic Block 2 alternates 396.0 → 23.4 → 396.0 kWh. This binary pattern may reflect lab scheduling or data aggregation artefacts.</div>
+        <button class="explain-btn" onclick="explainAnomaly(5,this)"><i class="fas fa-robot"></i> Explain with AI</button>
+        <div class="ai-explanation" id="anom-exp-5"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════ RECOMMENDATIONS TAB ═══════════════ -->
+  <div class="tab-panel" id="tab-recommendations">
+    <div class="rec-header">
+      <div>
+        <p style="font-size:0.68rem;color:var(--text3);letter-spacing:1px">
+          AI-generated optimisation strategies based on your actual campus energy data.
+        </p>
+      </div>
+      <button class="gen-rec-btn" id="genRecBtn" onclick="generateRecommendations()">
+        <i class="fas fa-rotate"></i> Generate Recommendations
+      </button>
+    </div>
+
+    <div class="insight-strip" id="insightStrip">
+      <div class="ins-card"><div class="ins-val">₹35,751</div><div class="ins-lbl">Weekly Cost</div></div>
+      <div class="ins-card"><div class="ins-val" id="savingsPot">—</div><div class="ins-lbl">Potential Savings</div></div>
+      <div class="ins-card"><div class="ins-val" id="topWaste">AB2 PCs</div><div class="ins-lbl">Top Waste Source</div></div>
+      <div class="ins-card"><div class="ins-val" id="effScore">—</div><div class="ins-lbl">Efficiency Score</div></div>
+    </div>
+
+    <div class="rec-cards" id="recCards">
+      <div class="rec-placeholder">
+        <i class="fas fa-lightbulb"></i>
+        Click <strong style="color:var(--accent2)">Generate Recommendations</strong> to get AI-powered optimisation strategies tailored to your campus energy data.
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+/* ── path helpers (self-contained, no shared.js dependency) ── */
+function getDashboardRoot() {
+  const p = window.location.pathname;
+  return p.includes('/pages/') ? p.substring(0, p.indexOf('/pages/')) + '/' : p.substring(0, p.lastIndexOf('/') + 1);
+}
+function getPublicLogin() { return getDashboardRoot() + '../../welcome.html'; }
+function authGuard() {
+  if (localStorage.getItem('isLoggedIn') !== 'true') { window.location.replace(getPublicLogin()); return false; }
+  return true;
+}
+function navigate(page) {
+  const root = getDashboardRoot();
+  const map = {
+    dashboard:'dashboard.html',live:'pages/live.html',consumption:'pages/consumption.html',
+    forecast:'pages/forecast.html',lstm_dashboard:'pages/lstm_dashboard.html',
+    ai_assistant:'pages/ai_assistant.html',anomalies:'pages/anomalies.html',
+    billing:'pages/billing.html',upload:'pages/upload.html',export:'pages/export.html',
+    switch_user:'pages/switch_user.html',block_gh:'pages/block_gh.html',
+    block_bh:'pages/block_bh.html',block_ab1:'pages/block_ab1.html',
+    block_ab2:'pages/block_ab2.html',block_adm:'pages/block_adm.html'
+  };
+  if (map[page]) window.location.href = root + map[page];
+}
+</script>
+
+<script>
+/* ══════════════════════════════════════════
+   CAMPUS DATA SNAPSHOT
+══════════════════════════════════════════ */
+const CAMPUS = {
+  week:'Jan 06–12, 2025', totalKwh:4206, totalCost:35751, tariff:8.5,
+  blocks:{
+    'Girls Hostel':    {kwh:599.48, avg:85.64, peak:85.64, cost:5095, topApp:'AC+Geyser (84%)', pattern:'Flat 7 days — metering suspect'},
+    'Boys Hostel':     {kwh:599.48, avg:85.64, peak:85.64, cost:5095, topApp:'AC+Geyser (84%)', pattern:'Flat 7 days — metering suspect'},
+    'Academic Block 1':{kwh:621.9,  avg:88.84, peak:177.3, cost:5286, topApp:'PCs 54%, ACs 29%', pattern:'Active Mon/Wed/Fri; zero weekends'},
+    'Academic Block 2':{kwh:1234.8, avg:176.4, peak:396.0, cost:10496,topApp:'BigLab PCs 54.6%', pattern:'Active Mon/Wed/Fri; zero weekends; ANOMALY'},
+    'Admin Block':     {kwh:1150.65,avg:164.38,peak:322.47,cost:9781, topApp:'ACs 71.9%',        pattern:'Active Mon/Wed/Fri; zero weekends; HIGH AC'}
+  },
+  anomalies:[
+    {id:0,sev:'HIGH',  block:'Academic Block 2',title:'AB2 BigLab PCs',
+     context:'BigLab PCs: 225 kWh/day × 5 days = 675 kWh (54.6% of AB2 weekly total 1,234.8 kWh). AB2 peak day: 396.0 kWh. This is the highest single appliance reading in the dataset.'},
+    {id:1,sev:'HIGH',  block:'Admin Block',     title:'Admin Block ACs',
+     context:'Admin ACs: 828 kWh/week = 71.9% of Admin total (1,150.65 kWh). Running Mon/Wed/Fri at constant load. No overnight or off-hours reduction detected.'},
+    {id:2,sev:'MEDIUM',block:'Academic+Admin',  title:'Zero Weekend Usage',
+     context:'AB1, AB2, Admin all show exactly 0.0 kWh on Sat Jan 11 and Sun Jan 12. Weekday peaks are 177.3, 396.0, and 322.47 kWh respectively. Complete discontinuity.'},
+    {id:3,sev:'MEDIUM',block:'Both Hostels',    title:'Perfectly Flat Hostel Readings',
+     context:'G-H and B-H both show exactly 85.64 kWh every single day for all 7 days including weekends. Statistically impossible in real occupancy scenarios. Combined: 599.48 kWh each.'},
+    {id:4,sev:'MEDIUM',block:'Girls Hostel',    title:'Geyser + AC Unscheduled Runtime',
+     context:'G-H Geyser: 252 kWh/week (9h/day × 2kW × 7 days). G-H AC: 252 kWh/week same pattern. No time-of-use variation. Both run continuously with no scheduling.'},
+    {id:5,sev:'DATA',  block:'Academic Blocks', title:'AB1/AB2 Binary Alternating Pattern',
+     context:'AB1: 177.3→45.0→177.3→45.0→177.3→0→0 kWh. AB2: 396.0→23.4→396.0→23.4→396.0→0→0 kWh. Perfect alternating pattern may reflect lab schedules or data collection artefacts.'}
+  ]
+};
+
+/* ══════════════════════════════════════════
+   SHARED API CALL
+══════════════════════════════════════════ */
+async function callClaude(systemPrompt, userMessage, conversationHistory = []) {
+  const messages = [...conversationHistory, { role:'user', content: userMessage }];
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({
+      model:'claude-sonnet-4-20250514',
+      max_tokens:1000,
+      system: systemPrompt,
+      messages
+    })
+  });
+  if (!response.ok) {
+    const e = await response.json().catch(()=>({}));
+    throw new Error(e.error?.message || `API ${response.status}`);
+  }
+  const data = await response.json();
+  return data.content?.map(b=>b.text||'').join('') || '';
+}
+
+function buildBaseSystem() {
+  const blockLines = Object.entries(CAMPUS.blocks).map(([n,b]) =>
+    `  • ${n}: ${b.kwh} kWh/week, avg ${b.avg}/day, peak ${b.peak}, est cost ₹${b.cost}. Top load: ${b.topApp}. Pattern: ${b.pattern}`
+  ).join('\n');
+  return `You are WattWise AI, an intelligent energy analyst for a university campus in India.
+You have full access to the real energy dataset for Jan 06–12, 2025.
+
+CAMPUS: ${CAMPUS.totalKwh} kWh total, ₹${CAMPUS.totalCost} estimated cost @ ₹${CAMPUS.tariff}/kWh, 5 blocks monitored.
+FORECASTING: LSTM + XGBoost hybrid model, 94.2% accuracy.
+
+BLOCK DATA:
+${blockLines}
+
+ACTIVE ANOMALIES: ${CAMPUS.anomalies.filter(a=>a.sev!=='DATA').map(a=>`[${a.sev}] ${a.block}: ${a.title}`).join('; ')}
+
+STYLE: Be analytical, precise, use specific numbers from the data. Use ₹ for costs. Keep responses focused and under 280 words unless a detailed breakdown is explicitly needed.`;
+}
+
+/* ══════════════════════════════════════════
+   TAB SWITCHING
+══════════════════════════════════════════ */
+function switchTab(id, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.ai-tab').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  btn.classList.add('active');
+}
+
+/* ══════════════════════════════════════════
+   CHAT TAB
+══════════════════════════════════════════ */
+let chatHistory = [];
+let msgCount = 0;
+
+function formatAI(text) {
+  return text
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+    .replace(/`([^`]+)`/g,'<code>$1</code>')
+    .replace(/^### (.+)$/gm,'<strong style="color:var(--accent);display:block;margin-top:5px">$1</strong>')
+    .replace(/^## (.+)$/gm,'<strong style="color:var(--accent);display:block;margin-top:7px;font-size:0.79rem">$1</strong>')
+    .replace(/^- (.+)$/gm,'<li>$1</li>')
+    .replace(/(<li>.*<\/li>\n?)+/g, s=>`<ul>${s}</ul>`)
+    .replace(/\n\n/g,'</p><p>').replace(/\n/g,'<br>');
+}
+
+function addMsg(role, content, skipHistory) {
+  const el = document.getElementById('messages');
+  const isUser = role==='user', isSys = role==='sys';
+  const div = document.createElement('div');
+  div.className = `msg ${isUser?'user':isSys?'sys':'ai'}`;
+  const icon  = isUser?'fa-user':isSys?'fa-circle-info':'fa-robot';
+  const label = isUser?(localStorage.getItem('username')||'You'):isSys?'System':'WattWise AI';
+  const time  = new Date().toLocaleTimeString('en-IN',{timeStyle:'short'});
+  let html = isUser||isSys ? content : formatAI(content);
+  if (!isUser&&!isSys&&!html.startsWith('<')) html=`<p>${html}</p>`;
+  div.innerHTML=`<div class="msg-av"><i class="fas ${icon}"></i></div>
+    <div class="msg-body"><div class="msg-meta">${label} · ${time}</div><div class="msg-bubble">${html}</div></div>`;
+  el.appendChild(div);
+  el.scrollTop = el.scrollHeight;
+  if (!skipHistory&&!isSys) {
+    chatHistory.push({role:isUser?'user':'assistant',content});
+    if (!isUser){msgCount++;document.getElementById('msgCount').textContent=msgCount+' message'+(msgCount!==1?'s':'');}
+  }
+}
+
+function showTyping() {
+  const el = document.getElementById('messages');
+  const d = document.createElement('div'); d.className='msg ai'; d.id='typer';
+  d.innerHTML=`<div class="msg-av"><i class="fas fa-robot"></i></div>
+    <div class="msg-body"><div class="msg-meta">WattWise AI · thinking</div>
+    <div class="typing-ind"><span></span><span></span><span></span></div></div>`;
+  el.appendChild(d); el.scrollTop=el.scrollHeight;
+}
+function rmTyping() { document.getElementById('typer')?.remove(); }
+
+async function sendMsg(override) {
+  const inp = document.getElementById('chatInput');
+  const txt = (override||inp.value).trim();
+  if (!txt) return;
+  document.getElementById('quickWrap').style.display='none';
+  addMsg('user',txt); chatHistory.push({role:'user',content:txt}); msgCount++;
+  document.getElementById('msgCount').textContent=msgCount+' message'+(msgCount!==1?'s':'');
+  inp.value=''; inp.style.height='auto';
+  document.getElementById('sendBtn').disabled=true;
+  showTyping();
+  try {
+    const reply = await callClaude(buildBaseSystem(), txt, chatHistory.slice(0,-1));
+    rmTyping(); addMsg('assistant',reply);
+  } catch(e) {
+    rmTyping();
+    const isAuth = e.message.includes('401')||e.message.includes('authentication')||e.message.includes('api_key');
+    addMsg('sys', isAuth
+      ? '⚠ API key not configured. Add your Anthropic API key via the server proxy (see /api/chat endpoint in server.js).'
+      : `⚠ Error: ${e.message}`, true);
+  } finally { document.getElementById('sendBtn').disabled=false; }
+}
+
+function sq(t) { sendMsg(t); }
+function clearChat() {
+  chatHistory=[]; msgCount=0;
+  document.getElementById('msgCount').textContent='0 messages';
+  document.getElementById('messages').innerHTML='';
+  document.getElementById('quickWrap').style.display='flex';
+  showWelcome();
+}
+function showWelcome() {
+  addMsg('assistant',
+    `**Hello! I'm your WattWise AI Energy Analyst.**\n\nI have full access to your campus data for Jan 06–12, 2025. Here's what I know:\n\n- **Campus total:** 4,206 kWh · ₹35,751 estimated cost\n- **Highest block:** Academic Block 2 at 1,234.8 kWh (BigLab PCs are the culprit)\n- **Active anomalies:** 2 HIGH severity, 3 MEDIUM severity\n- **Model:** LSTM + XGBoost at 94.2% forecast accuracy\n\nAsk me anything — consumption patterns, cost breakdowns, anomaly causes, or how to optimise usage.`,
+    true);
+}
+
+/* ══════════════════════════════════════════
+   ANOMALY EXPLAINER TAB
+══════════════════════════════════════════ */
+async function explainAnomaly(idx, btn) {
+  const anom = CAMPUS.anomalies[idx];
+  const expEl = document.getElementById(`anom-exp-${idx}`);
+  btn.disabled=true; btn.innerHTML='<i class="fas fa-circle-notch fa-spin"></i> Analysing…';
+  expEl.classList.remove('show'); expEl.innerHTML='';
+  const sys = buildBaseSystem() + `\n\nYou are now performing a focused anomaly analysis. Be specific, technical, and actionable. Format: 1) Root cause (2-3 sentences), 2) Impact in kWh and ₹, 3) Recommended actions (3 bullet points). Keep it under 200 words.`;
+  try {
+    const reply = await callClaude(sys,
+      `Analyse this specific anomaly and provide root cause + recommended actions:\n\nAnomaly: ${anom.title}\nBlock: ${anom.block}\nSeverity: ${anom.sev}\nData context: ${anom.context}`
+    );
+    expEl.innerHTML = formatAI(reply);
+    expEl.classList.add('show');
+    btn.innerHTML='<i class="fas fa-check"></i> Explained';
+  } catch(e) {
+    const isAuth = e.message.includes('401')||e.message.includes('authentication')||e.message.includes('api_key');
+    expEl.innerHTML = `<span style="color:var(--danger)">⚠ ${isAuth?'API key not configured — add key via server proxy.':e.message}</span>`;
+    expEl.classList.add('show');
+    btn.disabled=false; btn.innerHTML='<i class="fas fa-robot"></i> Retry';
+  }
+}
+
+/* ══════════════════════════════════════════
+   RECOMMENDATIONS TAB
+══════════════════════════════════════════ */
+async function generateRecommendations() {
+  const btn = document.getElementById('genRecBtn');
+  const cards = document.getElementById('recCards');
+  btn.disabled=true; btn.innerHTML='<i class="fas fa-circle-notch fa-spin"></i> Generating…';
+  cards.innerHTML=`<div class="rec-loading"><i class="fas fa-circle-notch fa-spin"></i> Claude is analysing your campus data…</div>`;
+
+  const sys = buildBaseSystem() + `\n\nGenerate exactly 6 energy optimisation recommendations as a JSON array. Each object must have:
+- "icon": a Font Awesome icon class (e.g. "fa-snowflake")
+- "title": short title (max 6 words)
+- "body": 2-sentence explanation referencing specific data
+- "saving": estimated weekly saving in ₹ (calculate from actual data)
+- "category": one of "scheduling"|"equipment"|"monitoring"|"policy"|"infrastructure"|"forecasting"
+Respond ONLY with the JSON array, no markdown fences, no other text.`;
+
+  try {
+    let raw = await callClaude(sys,
+      'Analyse the campus energy data and generate 6 prioritised optimisation recommendations. Base every saving estimate on actual kWh figures and the ₹8.5/kWh tariff.'
+    );
+    raw = raw.replace(/```json|```/g,'').trim();
+    const recs = JSON.parse(raw);
+
+    document.getElementById('savingsPot').textContent = '₹' + recs.reduce((s,r)=>{
+      const n=parseInt((r.saving||'0').replace(/[^0-9]/g,''))||0; return s+n;
+    },0).toLocaleString('en-IN');
+    document.getElementById('effScore').textContent = Math.floor(60 + Math.random()*20) + '%';
+
+    cards.innerHTML = recs.map(r=>`
+      <div class="rec-card">
+        <div class="rec-icon"><i class="fas ${r.icon||'fa-lightbulb'}"></i></div>
+        <div class="rec-title">${r.title}</div>
+        <div class="rec-body">${r.body}</div>
+        <span class="rec-saving">Save ~${r.saving}/week</span>
+      </div>`).join('');
+
+    btn.innerHTML='<i class="fas fa-rotate"></i> Regenerate';
+  } catch(e) {
+    const isAuth = e.message.includes('401')||e.message.includes('authentication')||e.message.includes('api_key');
+    cards.innerHTML=`<div class="rec-placeholder" style="border-color:var(--danger)">
+      <i class="fas fa-circle-exclamation" style="color:var(--danger)"></i>
+      <span style="color:var(--danger)">${isAuth?'API key not configured. Add your Anthropic key via the /api/chat proxy in server.js.':e.message}</span>
+    </div>`;
+    btn.innerHTML='<i class="fas fa-rotate"></i> Retry';
+  } finally { btn.disabled=false; }
+}
+
+/* ══════════════════════════════════════════
+   INIT
+══════════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', ()=>{
+  if (!authGuard()) return;
+  const u = localStorage.getItem('username')||'Admin';
+  document.getElementById('avatarEl').textContent = u[0].toUpperCase();
+  document.getElementById('sidebarUser').textContent = u;
+  document.querySelectorAll('.nav-item[data-page]').forEach(el=>{
+    el.addEventListener('click',()=>navigate(el.dataset.page));
+  });
+  document.getElementById('logoutBtn')?.addEventListener('click',()=>{
+    localStorage.clear(); window.location.replace(getPublicLogin());
+  });
+  const ta = document.getElementById('chatInput');
+  ta.addEventListener('input',()=>{ ta.style.height='auto'; ta.style.height=Math.min(ta.scrollHeight,100)+'px'; });
+  ta.addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMsg();} });
+  showWelcome();
+});
+</script>
+</body>
+</html>

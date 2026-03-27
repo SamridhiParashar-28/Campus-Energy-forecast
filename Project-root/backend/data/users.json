@@ -10,5 +10,11 @@
     "password": "$2b$12$ao01ofi6LGilZu3uANe5bO3eWqaFTfCg/rW2BipZ6oLjOl/PA8bPG",
     "role": "admin",
     "createdAt": "2026-03-26T23:24:38.391Z"
+  },
+  {
+    "username": "samridhi",
+    "password": "$2b$12$GGleZHBLRykgANNk1GcJ0e/GfVMImAB3Yvd98EO1OWhgMsTBFqRoy",
+    "role": "viewer",
+    "createdAt": "2026-03-27T11:04:35.006Z"
   }
 ]
