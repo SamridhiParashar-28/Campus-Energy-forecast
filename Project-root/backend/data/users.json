@@ -4,6 +4,11 @@
     "password": "$2b$12$XgBfw1oPxn/Fq7YlclkD5OgXJD0oKz3CJ9x2i8m9UrbXPfwPGz9Au",
     "role": "viewer",
     "createdAt": "2026-03-25T07:14:58.544Z"
+  },
+  {
+    "username": "Aaryamann",
+    "password": "$2b$12$ao01ofi6LGilZu3uANe5bO3eWqaFTfCg/rW2BipZ6oLjOl/PA8bPG",
+    "role": "admin",
+    "createdAt": "2026-03-26T23:24:38.391Z"
   }
 ]
-
