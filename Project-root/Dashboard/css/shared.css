@@ -94,24 +94,32 @@ body::after {
 }
 [data-theme="light"] body::after { display: none; }
 
-/* ── SIDEBAR ── */
+/* ── SIDEBAR - Scrollable Version ── */
 .sidebar {
   width: var(--sidebar-w);
-  min-height: 100vh;
+  height: 100vh;                    /* Changed from min-height */
   background: var(--bg2);
   border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;
   position: fixed;
-  top: 0; left: 0;
+  top: 0; 
+  left: 0;
   z-index: 100;
-  overflow-y: auto;
+  overflow: hidden;                 /* Important for controlled scrolling */
+}
+
+/* Header (Logo + User) - Fixed at top */
+.sidebar-logo,
+.sidebar-user {
+  flex-shrink: 0;                   /* Prevent shrinking */
 }
 
 .sidebar-logo {
   padding: 1.4rem 1.4rem 0.8rem;
   border-bottom: 1px solid var(--border);
 }
+
 .sidebar-logo h1 {
   font-family: var(--font-head);
   font-size: 1.2rem;
@@ -120,6 +128,7 @@ body::after {
   text-shadow: 0 0 20px var(--accent);
   line-height: 1.1;
 }
+
 .sidebar-logo p {
   font-size: 0.6rem;
   color: var(--text3);
@@ -134,20 +143,61 @@ body::after {
   align-items: center;
   gap: 10px;
 }
+
 .avatar {
-  width: 30px; height: 30px;
+  width: 30px; 
+  height: 30px;
   border: 1.5px solid var(--border2);
   border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
+  display: flex; 
+  align-items: center; 
+  justify-content: center;
   font-size: 0.72rem;
   background: var(--bg3);
   color: var(--accent2);
   flex-shrink: 0;
 }
-.sidebar-user-info span { display: block; font-size: 0.78rem; color: var(--text2); }
-.sidebar-user-info small { font-size: 0.62rem; color: var(--text3); }
 
-.sidebar-nav { flex: 1; padding: 0.8rem 0; }
+.sidebar-user-info span { 
+  display: block; 
+  font-size: 0.78rem; 
+  color: var(--text2); 
+}
+
+.sidebar-user-info small { 
+  font-size: 0.62rem; 
+  color: var(--text3); 
+}
+
+/* Scrollable Navigation Area */
+.sidebar-nav {
+  flex: 1;                          /* Takes all remaining space */
+  padding: 0.8rem 0;
+  overflow-y: auto;                 /* This makes it scrollable */
+  overflow-x: hidden;
+  min-height: 0;                    /* Important for flex scrolling */
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent3) transparent;
+}
+
+/* Custom Scrollbar */
+.sidebar-nav::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar-nav::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb {
+  background: var(--accent3);
+  border-radius: 10px;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb:hover {
+  background: var(--accent2);
+}
+
 .nav-section-label {
   font-size: 0.58rem;
   letter-spacing: 3px;
@@ -169,25 +219,48 @@ body::after {
   border-left: 3px solid transparent;
   letter-spacing: 0.5px;
 }
-.nav-item i { width: 16px; text-align: center; font-size: 0.78rem; }
-.nav-item:hover  { color: var(--accent); background: var(--glow2); border-left-color: var(--accent3); }
-.nav-item.active { color: var(--accent); background: var(--glow2); border-left-color: var(--accent); }
 
+.nav-item i { 
+  width: 16px; 
+  text-align: center; 
+  font-size: 0.78rem; 
+}
+
+.nav-item:hover  { 
+  color: var(--accent); 
+  background: var(--glow2); 
+  border-left-color: var(--accent3); 
+}
+
+.nav-item.active { 
+  color: var(--accent); 
+  background: var(--glow2); 
+  border-left-color: var(--accent); 
+}
+
+/* Special styling for AI & LSTM */
 .nav-item[data-page="ai_assistant"],
 .nav-item[data-page="lstm_dashboard"] {
   color: var(--accent);
   font-weight: bold;
   border-left: 3px solid var(--accent);
 }
-.nav-item[data-page="ai_assistant"]:hover,
-.nav-item[data-page="lstm_dashboard"]:hover {
-  background: var(--glow);
+
+.nav-item.danger { 
+  color: var(--danger); 
 }
 
-.nav-item.danger { color: var(--danger); }
-.nav-item.danger:hover { background: rgba(255,51,85,0.08); border-left-color: var(--danger); }
+.nav-item.danger:hover { 
+  background: rgba(255,51,85,0.08); 
+  border-left-color: var(--danger); 
+}
 
-.sidebar-bottom { padding: 0.8rem 0; border-top: 1px solid var(--border); }
+/* Bottom section - Fixed at bottom */
+.sidebar-bottom {
+  padding: 0.8rem 0;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;                   /* Keep it at bottom */
+}
 
 /* ── THEME TOGGLE BUTTON ── */
 .theme-toggle-btn {
