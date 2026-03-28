@@ -14,14 +14,12 @@ function toggleTheme() {
   const next    = current === 'dark' ? 'light' : 'dark';
   document.documentElement.setAttribute('data-theme', next);
   localStorage.setItem(THEME_KEY, next);
-  // Update button icon + label
   const btn = document.getElementById('themeToggleBtn');
   if (btn) {
     btn.innerHTML = next === 'light'
-      ? '<i class="fas fa-moon"></i> Dark Mode'
-      : '<i class="fas fa-sun"></i> Light Mode';
+      ? '<i class="fas fa-moon"></i> Dark'
+      : '<i class="fas fa-sun"></i> Light';
   }
-  // Refresh all active charts
   if (typeof Chart !== 'undefined') {
     const colors = getChartColors();
     Chart.instances && Object.values(Chart.instances).forEach(chart => {
@@ -100,20 +98,18 @@ const WW = {
   }
 };
 
-// Consistent Color Palette for ALL blocks across ALL charts
 const BLOCK_COLORS = {
-  'G-H':   '#b026ff',   // Purple  - Girls Hostel
-  'B-H':   '#00ff41',   // Green   - Boys Hostel
-  'AB1':   '#00aaff',   // Blue    - Academic Block 1
-  'AB2':   '#ffaa00',   // Orange  - Academic Block 2
-  'ADMIN': '#ff6432'    // Reddish - Admin Block
+  'G-H':   '#b026ff',
+  'B-H':   '#00ff41',
+  'AB1':   '#00aaff',
+  'AB2':   '#ffaa00',
+  'ADMIN': '#ff6432'
 };
 
 function getBlockColor(blockKey) {
   return BLOCK_COLORS[blockKey] || '#00ff41';
 }
 
-// Path helpers
 function getDashboardRoot() {
   const path = window.location.pathname;
   if (path.includes('/pages/')) {
@@ -128,7 +124,6 @@ function getPublicLogin() {
   return root + '../../public/index.html';
 }
 
-// Auth & Sidebar
 function authGuard() {
   if (localStorage.getItem('isLoggedIn') !== 'true') {
     window.location.replace(getPublicLogin());
@@ -145,7 +140,7 @@ function initSidebar(activeId) {
   if (!authGuard()) return;
 
   const u = localStorage.getItem('username') || 'User';
-  const avatarEl = document.getElementById('avatarEl');
+  const avatarEl    = document.getElementById('avatarEl');
   const sidebarUser = document.getElementById('sidebarUser');
   const sidebarRole = document.getElementById('sidebarRole');
 
@@ -166,22 +161,21 @@ function initSidebar(activeId) {
     });
   }
 
-  // Inject theme toggle button into sidebar-bottom
-  const sidebarBottom = document.querySelector('.sidebar-bottom');
-  if (sidebarBottom && !document.getElementById('themeToggleBtn')) {
+  // Inject theme toggle button into topbar-right (beside System Online)
+  const topbarRight = document.querySelector('.topbar-right');
+  if (topbarRight && !document.getElementById('themeToggleBtn')) {
     const isLight = document.documentElement.getAttribute('data-theme') === 'light';
     const btn = document.createElement('button');
     btn.id        = 'themeToggleBtn';
     btn.className = 'theme-toggle-btn';
     btn.innerHTML = isLight
-      ? '<i class="fas fa-moon"></i> Dark Mode'
-      : '<i class="fas fa-sun"></i> Light Mode';
+      ? '<i class="fas fa-moon"></i> Dark'
+      : '<i class="fas fa-sun"></i> Light';
     btn.addEventListener('click', toggleTheme);
-    sidebarBottom.appendChild(btn);
+    topbarRight.insertBefore(btn, topbarRight.firstChild);
   }
 }
 
-// Navigation
 function navigate(page) {
   const root = getDashboardRoot();
   const map = {
@@ -202,12 +196,10 @@ function navigate(page) {
     block_ab2:      root + 'pages/block_ab2.html',
     block_adm:      root + 'pages/block_adm.html',
   };
-
   if (map[page]) window.location.href = map[page];
   else console.warn('[WattWise] Unknown page:', page);
 }
 
-// Chart Defaults
 const CHART_DEFAULTS = {
   responsive: true,
   maintainAspectRatio: false,
@@ -249,16 +241,15 @@ function lineChart(id, labels, datasets) {
   });
 }
 
-// Line Only Charts (No Fill) + Consistent Colors
 function dataset(label, data, blockKey) {
   const color = getBlockColor(blockKey);
   return {
-    label: label,
-    data: data,
+    label,
+    data,
     borderColor: color,
-    backgroundColor: 'transparent',   // No fill
+    backgroundColor: 'transparent',
     tension: 0.4,
-    fill: false,                      // Pure line only
+    fill: false,
     borderWidth: 3.5,
     pointBackgroundColor: '#f4f0f0',
     pointBorderColor: color,
@@ -268,7 +259,6 @@ function dataset(label, data, blockKey) {
   };
 }
 
-// CSV Export & Budget Helpers (unchanged)
 function exportCSV(rows, filename) {
   const csv = rows.map(row =>
     row.map(cell => {
@@ -278,7 +268,6 @@ function exportCSV(rows, filename) {
         : str;
     }).join(',')
   ).join('\r\n');
-
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   const url  = URL.createObjectURL(blob);
   const link = document.createElement('a');
@@ -307,6 +296,6 @@ function getBudgetStatus(spent, budget) {
   if (!budget || budget <= 0) return null;
   const pct = (spent / budget) * 100;
   if (pct >= 100) return { label: 'OVER BUDGET', cls: 'badge-bad', pct };
-  if (pct >= 80)  return { label: 'NEAR LIMIT', cls: 'badge-warn', pct };
+  if (pct >= 80)  return { label: 'NEAR LIMIT',  cls: 'badge-warn', pct };
   return { label: 'WITHIN BUDGET', cls: 'badge-ok', pct };
 }
