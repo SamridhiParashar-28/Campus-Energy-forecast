@@ -260,7 +260,7 @@ function dataset(label, data, blockKey) {
     tension: 0.4,
     fill: false,                      // Pure line only
     borderWidth: 3.5,
-    pointBackgroundColor: '#000',
+    pointBackgroundColor: '#f4f0f0',
     pointBorderColor: color,
     pointBorderWidth: 2.5,
     pointRadius: 4,
