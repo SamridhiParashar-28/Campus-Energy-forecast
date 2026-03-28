@@ -1,26 +1,33 @@
-// shared.js - FINAL CLEAN VERSION (for your current dashboard)
+// shared.js — WattWise · FIXED
 
 const WW = {
-  dates: ['Jan 06','Jan 07','Jan 08','Jan 09','Jan 10','Jan 11','Jan 12'],
+  dates: ['Jan 06', 'Jan 07', 'Jan 08', 'Jan 09', 'Jan 10', 'Jan 11', 'Jan 12'],
   blocks: {
-    'G-H':  { label:'Girls Hostel',    icon:'fa-venus',           daily:[85.64,85.64,85.64,85.64,85.64,85.64,85.64], total:599.48,  avg:85.64,  peak:85.64,  rate:8.5, appliances:[['AC',252.0],['Geyser',252.0],['Power Socket',63.0],['Sockets',18.9],['Fan',6.3],['Tubelights',5.04],['Bulbs',2.24]] },
-    'B-H':  { label:'Boys Hostel',     icon:'fa-mars',            daily:[85.64,85.64,85.64,85.64,85.64,85.64,85.64], total:599.48,  avg:85.64,  peak:85.64,  rate:8.5, appliances:[['AC',252.0],['Geyser',252.0],['Power Socket',63.0],['Sockets',18.9],['Fan',6.3],['Tubelights',5.04],['Bulbs',2.24]] },
-    'AB1':  { label:'Academic Blk 1',  icon:'fa-building-columns',daily:[177.3,45.0,177.3,45.0,177.3,0.0,0.0],       total:621.9,   avg:88.84,  peak:177.3,  rate:8.5, appliances:[['PCs',337.5],['ACs',180.0],['AC',54.0],['Fans',18.0],['Tube lights',9.0],['Smart board',9.0],['Sockets',9.0],['Smartboard',5.4]] },
-    'AB2':  { label:'Academic Blk 2',  icon:'fa-building',        daily:[396.0,23.4,396.0,23.4,396.0,0.0,0.0],       total:1234.8,  avg:176.4,  peak:396.0,  rate:8.5, appliances:[['PCs',675.0],['ACs',432.0],['AC',90.0],['Smartboards',10.8],['Smartboard',9.0],['Sockets',9.0],['Fans',9.0]] },
-    'ADMIN':{ label:'Admin Block',     icon:'fa-landmark',        daily:[322.47,91.62,322.47,91.62,322.47,0.0,0.0],  total:1150.65, avg:164.38, peak:322.47, rate:8.5, appliances:[['ACs',828.0],['AC',180.0],['PCs',45.0],['PC',45.0],['Sockets',21.6],['Smartboards',10.8],['Projector',8.1],['Fan',4.5],['LED TV',3.6],['Projector Screen',2.7],['Mic Stand',1.35]] }
+    'G-H':   { label: 'Girls Hostel',    icon: 'fa-venus',            daily: [85.64, 85.64, 85.64, 85.64, 85.64, 85.64, 85.64], total: 599.48,  avg: 85.64,  peak: 85.64,  rate: 8.5, appliances: [['AC', 252.0], ['Geyser', 252.0], ['Power Socket', 63.0], ['Sockets', 18.9], ['Fan', 6.3], ['Tubelights', 5.04], ['Bulbs', 2.24]] },
+    'B-H':   { label: 'Boys Hostel',     icon: 'fa-mars',             daily: [85.64, 85.64, 85.64, 85.64, 85.64, 85.64, 85.64], total: 599.48,  avg: 85.64,  peak: 85.64,  rate: 8.5, appliances: [['AC', 252.0], ['Geyser', 252.0], ['Power Socket', 63.0], ['Sockets', 18.9], ['Fan', 6.3], ['Tubelights', 5.04], ['Bulbs', 2.24]] },
+    'AB1':   { label: 'Academic Blk 1',  icon: 'fa-building-columns', daily: [177.3, 45.0, 177.3, 45.0, 177.3, 0.0, 0.0],       total: 621.9,   avg: 88.84,  peak: 177.3,  rate: 8.5, appliances: [['PCs', 337.5], ['ACs', 180.0], ['AC', 54.0], ['Fans', 18.0], ['Tube lights', 9.0], ['Smart board', 9.0], ['Sockets', 9.0], ['Smartboard', 5.4]] },
+    'AB2':   { label: 'Academic Blk 2',  icon: 'fa-building',         daily: [396.0, 23.4, 396.0, 23.4, 396.0, 0.0, 0.0],       total: 1234.8,  avg: 176.4,  peak: 396.0,  rate: 8.5, appliances: [['PCs', 675.0], ['ACs', 432.0], ['AC', 90.0], ['Smartboards', 10.8], ['Smartboard', 9.0], ['Sockets', 9.0], ['Fans', 9.0]] },
+    'ADMIN': { label: 'Admin Block',     icon: 'fa-landmark',         daily: [322.47, 91.62, 322.47, 91.62, 322.47, 0.0, 0.0],  total: 1150.65, avg: 164.38, peak: 322.47, rate: 8.5, appliances: [['ACs', 828.0], ['AC', 180.0], ['PCs', 45.0], ['PC', 45.0], ['Sockets', 21.6], ['Smartboards', 10.8], ['Projector', 8.1], ['Fan', 4.5], ['LED TV', 3.6], ['Projector Screen', 2.7], ['Mic Stand', 1.35]] }
   }
 };
 
+// ── Path helpers ───────────────────────────────────────────
 function getDashboardRoot() {
   const path = window.location.pathname;
-  if (path.includes('/pages/')) return path.substring(0, path.indexOf('/pages/')) + '/';
-  return path.substring(0, path.lastIndexOf('/') + 1) || './';
+  if (path.includes('/pages/')) {
+    return path.substring(0, path.indexOf('/pages/')) + '/';
+  }
+  const lastSlash = path.lastIndexOf('/');
+  return lastSlash >= 0 ? path.substring(0, lastSlash + 1) : './';
 }
 
 function getPublicLogin() {
-  return getDashboardRoot() + '../../public/index.html';
+  // Walk up to find public/index.html relative to current location
+  const root = getDashboardRoot();
+  return root + '../../public/index.html';
 }
 
+// ── Auth ───────────────────────────────────────────────────
 function authGuard() {
   if (localStorage.getItem('isLoggedIn') !== 'true') {
     window.location.replace(getPublicLogin());
@@ -33,17 +40,22 @@ function isAdmin() {
   return localStorage.getItem('role') === 'admin';
 }
 
-// Main Sidebar Init
+// ── Sidebar init ───────────────────────────────────────────
 function initSidebar(activeId) {
   if (!authGuard()) return;
 
   const u = localStorage.getItem('username') || 'User';
-  if (document.getElementById('avatarEl')) document.getElementById('avatarEl').textContent = u[0].toUpperCase();
-  if (document.getElementById('sidebarUser')) document.getElementById('sidebarUser').textContent = u;
-  if (document.getElementById('sidebarRole')) document.getElementById('sidebarRole').textContent = isAdmin() ? 'Admin' : 'Viewer';
+  const avatarEl = document.getElementById('avatarEl');
+  const sidebarUser = document.getElementById('sidebarUser');
+  const sidebarRole = document.getElementById('sidebarRole');
+
+  if (avatarEl)    avatarEl.textContent    = u[0].toUpperCase();
+  if (sidebarUser) sidebarUser.textContent = u;
+  if (sidebarRole) sidebarRole.textContent = isAdmin() ? 'Admin' : 'Viewer';
 
   document.querySelectorAll('.nav-item[data-page]').forEach(el => {
     el.classList.toggle('active', el.dataset.page === activeId);
+    el.addEventListener('click', () => navigate(el.dataset.page));
   });
 
   const logoutBtn = document.getElementById('logoutBtn');
@@ -55,7 +67,7 @@ function initSidebar(activeId) {
   }
 }
 
-// Navigation
+// ── Navigation ─────────────────────────────────────────────
 function navigate(page) {
   const root = getDashboardRoot();
   const map = {
@@ -84,17 +96,24 @@ function navigate(page) {
   }
 }
 
-// Chart helpers
+// ── Chart defaults ─────────────────────────────────────────
 const CHART_DEFAULTS = {
   responsive: true,
   maintainAspectRatio: false,
   interaction: { mode: 'index', intersect: false },
   scales: {
-    y: { beginAtZero: true, ticks: { color: '#007a1f', font: { family: "'Share Tech Mono'", size: 10 } }, grid: { color: 'rgba(0,255,65,0.06)' } },
-    x: { ticks: { color: '#007a1f', font: { family: "'Share Tech Mono'", size: 10 } }, grid: { display: false } }
+    y: {
+      beginAtZero: true,
+      ticks: { color: '#007a1f', font: { family: "'Share Tech Mono'", size: 10 } },
+      grid:  { color: 'rgba(0,255,65,0.06)' }
+    },
+    x: {
+      ticks: { color: '#007a1f', font: { family: "'Share Tech Mono'", size: 10 } },
+      grid:  { display: false }
+    }
   },
   plugins: {
-    legend: { labels: { color: '#00cc33', font: { family: "'Share Tech Mono'", size: 11 }, boxWidth: 12 } },
+    legend:  { labels: { color: '#00cc33', font: { family: "'Share Tech Mono'", size: 11 }, boxWidth: 12 } },
     tooltip: { backgroundColor: '#010d01', borderColor: '#00551a', borderWidth: 1, titleColor: '#00ff41', bodyColor: '#00cc33' }
   }
 };
@@ -111,8 +130,8 @@ function lineChart(id, labels, datasets) {
 
 function dataset(label, data, color, dashed = false) {
   return {
-    label: label,
-    data: data,
+    label,
+    data,
     borderColor: color,
     backgroundColor: color.replace('rgb', 'rgba').replace(')', ',0.10)'),
     tension: 0.35,
@@ -123,21 +142,46 @@ function dataset(label, data, color, dashed = false) {
   };
 }
 
-// Budget helpers
+// ── CSV export helper ──────────────────────────────────────
+function exportCSV(rows, filename) {
+  const csv = rows.map(row =>
+    row.map(cell => {
+      const str = String(cell);
+      return str.includes(',') || str.includes('"') || str.includes('\n')
+        ? '"' + str.replace(/"/g, '""') + '"'
+        : str;
+    }).join(',')
+  ).join('\r\n');
+
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url  = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href     = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+// ── Budget helpers ─────────────────────────────────────────
 const BUDGET_KEY = 'ww_budgets';
+
 function getBudgets() {
-  try { return JSON.parse(localStorage.getItem(BUDGET_KEY)) || {}; } 
+  try { return JSON.parse(localStorage.getItem(BUDGET_KEY)) || {}; }
   catch { return {}; }
 }
+
 function saveBudget(key, value) {
   const b = getBudgets();
   b[key] = value;
   localStorage.setItem(BUDGET_KEY, JSON.stringify(b));
 }
+
 function getBudgetStatus(spent, budget) {
   if (!budget || budget <= 0) return null;
   const pct = (spent / budget) * 100;
-  if (pct >= 100) return { label: 'OVER BUDGET', cls: 'badge-bad', pct };
-  if (pct >= 80)  return { label: 'NEAR LIMIT', cls: 'badge-warn', pct };
-  return { label: 'WITHIN BUDGET', cls: 'badge-ok', pct };
+  if (pct >= 100) return { label: 'OVER BUDGET', cls: 'badge-bad',  pct };
+  if (pct >= 80)  return { label: 'NEAR LIMIT',  cls: 'badge-warn', pct };
+  return               { label: 'WITHIN BUDGET', cls: 'badge-ok',   pct };
 }
