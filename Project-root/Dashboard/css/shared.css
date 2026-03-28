@@ -23,25 +23,36 @@
   --font-head: 'Orbitron', monospace;
 }
 
-/* ── LIGHT THEME ── */
+/* ── LIGHT THEME - Soft Pastel Blue ── */
 [data-theme="light"] {
-  --bg:        #f4f6f8;
-  --bg2:       #eaf0f8;
-  --bg3:       #dde8f5;
-  --card:      #ffffff;
-  --accent:    #0a5c9e;
-  --accent2:   #0d7ac8;
-  --accent3:   #2d96d4;
-  --border:    #b2cce8;
-  --border2:   #7dafd9;
-  --glow:      rgba(10,92,158,0.18);
-  --glow2:     rgba(10,92,158,0.07);
-  --text:      #0a0f1a;
-  --text2:     #1a3460;
-  --text3:     #4a6890;
-  --danger:    #cc1133;
-  --warn:      #c47a00;
-  --info:      #006fa8;
+  /* Backgrounds - Soft Pastel Blues */
+  --bg:        #e0f0ff;     /* Very soft sky blue */
+  --bg2:       #d0e8ff;     /* Slightly deeper pastel blue */
+  --bg3:       #c8e4ff;     /* Light periwinkle blue */
+  --card:      #f0f7ff;     /* Almost white with blue tint - perfect for cards */
+
+  /* Accents - Pastel Blues */
+  --accent:    #4a9cff;     /* Bright but soft sky blue */
+  --accent2:   #2b7fe6;     /* Medium pastel blue */
+  --accent3:   #1e6ac9;     /* Deeper pastel blue */
+
+  /* Borders */
+  --border:    #b8d8ff;     /* Soft blue border */
+  --border2:   #9bc8ff;     /* Slightly stronger blue border */
+
+  /* Glows */
+  --glow:      rgba(74, 156, 255, 0.22);
+  --glow2:     rgba(74, 156, 255, 0.09);
+
+  /* Text Colors - Dark for good contrast on light backgrounds */
+  --text:      #1a2a4a;     /* Deep navy (excellent readability) */
+  --text2:     #2c446e;     /* Softer navy */
+  --text3:     #4a6a94;     /* Muted blue-gray */
+
+  /* Status Colors - Soft Pastel Versions */
+  --danger:    #ff6b7a;     /* Soft coral red */
+  --warn:      #ffb74d;     /* Soft pastel orange */
+  --info:      #4fc3f7;     /* Soft bright blue */
 }
 
 /* ── LIGHT THEME: hardcoded green overrides → blue ── */
