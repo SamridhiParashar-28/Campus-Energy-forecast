@@ -46,9 +46,16 @@ function animateCursor() {
 animateCursor();
 
 document.querySelectorAll('a, button').forEach(el => {
-  el.addEventListener('mouseenter', () => cursor.style.transform = 'translate(-50%,-50%) scale(2)');
-  el.addEventListener('mouseleave', () => cursor.style.transform = 'translate(-50%,-50%) scale(1)');
+  el.addEventListener('mouseenter', () => {
+    cursor.style.opacity = '0';
+    cursorDot.style.opacity = '0';
+  });
+  el.addEventListener('mouseleave', () => {
+    cursor.style.opacity = '1';
+    cursorDot.style.opacity = '1';
+  });
 });
+
 
 // ── Counter animation for hero stats ─────────────────────
 function animateCounter(el, target, suffix, duration) {
