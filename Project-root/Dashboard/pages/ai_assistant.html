@@ -7,7 +7,6 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"/>
   <link rel="stylesheet" href="../css/shared.css"/>
   <style>
-    /* ── Layout: two columns, chat fills remaining height ── */
     .ai-layout {
       display: grid;
       grid-template-columns: 1fr 300px;
@@ -15,7 +14,6 @@
       align-items: start;
     }
 
-    /* ── Chat panel ── */
     .chat-panel {
       display: flex; flex-direction: column;
       height: calc(100vh - 130px);
@@ -29,7 +27,6 @@
       background: linear-gradient(90deg, transparent, var(--accent), transparent);
     }
 
-    /* ── Chat header ── */
     .chat-header {
       padding: 12px 16px; border-bottom: 1px solid var(--border);
       display: flex; align-items: center; gap: 10px;
@@ -56,7 +53,6 @@
     }
     .clear-btn:hover { border-color: var(--danger); color: var(--danger); }
 
-    /* ── Messages ── */
     .chat-messages {
       flex: 1; overflow-y: auto; padding: 14px;
       display: flex; flex-direction: column; gap: 10px;
@@ -85,14 +81,12 @@
     .msg-ts { font-size: 0.55rem; color: var(--text3); margin-top: 3px; }
     .msg.user .msg-ts { text-align: right; }
 
-    /* ── Typing ── */
     .typing-wrap { display: flex; gap: 4px; padding: 8px 12px; align-items: center; }
     .t-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--accent3); animation: tbounce 1.2s infinite; }
     .t-dot:nth-child(2) { animation-delay: 0.2s; }
     .t-dot:nth-child(3) { animation-delay: 0.4s; }
     @keyframes tbounce { 0%,60%,100%{transform:translateY(0);opacity:0.35} 30%{transform:translateY(-5px);opacity:1} }
 
-    /* ── Quick chips ── */
     .chips-bar {
       padding: 8px 14px; border-top: 1px solid var(--border);
       display: flex; gap: 5px; flex-wrap: wrap;
@@ -105,7 +99,6 @@
     }
     .chip:hover { border-color: var(--accent3); color: var(--accent2); background: rgba(0,255,65,0.04); }
 
-    /* ── Input row ── */
     .chat-input-row {
       padding: 10px 14px; border-top: 1px solid var(--border);
       display: flex; gap: 8px; flex-shrink: 0; background: var(--bg3);
@@ -125,7 +118,6 @@
     .send-btn:hover:not(:disabled) { background: rgba(0,255,65,0.07); border-color: var(--accent); color: var(--accent); box-shadow: 0 0 10px var(--glow); }
     .send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
-    /* ── Right sidebar ── */
     .side-panel { display: flex; flex-direction: column; gap: 0.9rem; }
 
     .mrow { display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid rgba(0,85,26,0.3); font-size:0.69rem; }
@@ -150,32 +142,43 @@
 </head>
 <body>
 
-<nav class="sidebar-nav">
-  <div class="nav-section-label">Main</div>
-  <a class="nav-item" data-page="dashboard"><i class="fas fa-gauge-high"></i> Dashboard</a>
-  <a class="nav-item" data-page="live"><i class="fas fa-bolt"></i> Live Usage</a>
-  <a class="nav-item" data-page="consumption"><i class="fas fa-chart-line"></i> Consumption Trend</a>
+<!-- ── SIDEBAR (FIXED: added opening <aside> tag) ── -->
+<aside class="sidebar">
+  <div class="sidebar-logo"><h1>WATT<br>WISE</h1><p>Energy Monitor</p></div>
+  <div class="sidebar-user">
+    <div class="avatar" id="avatarEl">—</div>
+    <div class="sidebar-user-info"><span id="sidebarUser">—</span><small id="sidebarRole">—</small></div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section-label">Main</div>
+    <a class="nav-item" data-page="dashboard"><i class="fas fa-gauge-high"></i> Dashboard</a>
+    <a class="nav-item" data-page="live"><i class="fas fa-bolt"></i> Live Usage</a>
+    <a class="nav-item" data-page="consumption"><i class="fas fa-chart-line"></i> Consumption Trend</a>
 
-  <div class="nav-section-label">Analysis</div>
-  <a class="nav-item" data-page="forecast"><i class="fas fa-brain"></i> ML Forecast</a>
-  <a class="nav-item" data-page="lstm_dashboard"><i class="fas fa-wave-square"></i> LSTM Dashboard</a>
-  <a class="nav-item" data-page="ai_assistant"><i class="fas fa-robot"></i> AI Assistant</a>
-  <a class="nav-item" data-page="anomalies"><i class="fas fa-triangle-exclamation"></i> Anomalies</a>
+    <div class="nav-section-label">Analysis</div>
+    <a class="nav-item" data-page="forecast"><i class="fas fa-brain"></i> ML Forecast</a>
+    <a class="nav-item" data-page="lstm_dashboard"><i class="fas fa-wave-square"></i> LSTM Dashboard</a>
+    <a class="nav-item" data-page="ai_assistant"><i class="fas fa-robot"></i> AI Assistant</a>
+    <a class="nav-item" data-page="anomalies"><i class="fas fa-triangle-exclamation"></i> Anomalies</a>
 
-  <div class="nav-section-label">Data</div>
-  <a class="nav-item" data-page="upload"><i class="fas fa-upload"></i> Upload Data</a>
-  <a class="nav-item" data-page="export"><i class="fas fa-file-export"></i> Export Report</a>
+    <div class="nav-section-label">Data</div>
+    <a class="nav-item" data-page="upload"><i class="fas fa-upload"></i> Upload Data</a>
+    <a class="nav-item" data-page="export"><i class="fas fa-file-export"></i> Export Report</a>
 
-  <div class="nav-section-label">Blocks</div>
-  <a class="nav-item" data-page="block_gh"><i class="fas fa-venus"></i> Girls Hostel</a>
-  <a class="nav-item" data-page="block_bh"><i class="fas fa-mars"></i> Boys Hostel</a>
-  <a class="nav-item" data-page="block_ab1"><i class="fas fa-building-columns"></i> Academic Blk 1</a>
-  <a class="nav-item" data-page="block_ab2"><i class="fas fa-building"></i> Academic Blk 2</a>
-  <a class="nav-item" data-page="block_adm"><i class="fas fa-landmark"></i> Admin Block</a>
+    <div class="nav-section-label">Blocks</div>
+    <a class="nav-item" data-page="block_gh"><i class="fas fa-venus"></i> Girls Hostel</a>
+    <a class="nav-item" data-page="block_bh"><i class="fas fa-mars"></i> Boys Hostel</a>
+    <a class="nav-item" data-page="block_ab1"><i class="fas fa-building-columns"></i> Academic Blk 1</a>
+    <a class="nav-item" data-page="block_ab2"><i class="fas fa-building"></i> Academic Blk 2</a>
+    <a class="nav-item" data-page="block_adm"><i class="fas fa-landmark"></i> Admin Block</a>
 
-  <div class="nav-section-label">Account</div>
-  <a class="nav-item" data-page="switch_user"><i class="fas fa-users-gear"></i> User Management</a>
-</nav>
+    <div class="nav-section-label">Account</div>
+    <a class="nav-item" data-page="switch_user"><i class="fas fa-users-gear"></i> User Management</a>
+  </nav>
+  <div class="sidebar-bottom">
+    <a class="nav-item danger" id="logoutBtn"><i class="fas fa-right-from-bracket"></i> Sign Out</a>
+  </div>
+</aside>
 
 <!-- ── MAIN ── -->
 <main class="main">
@@ -284,40 +287,8 @@
 
 <script src="../js/shared.js"></script>
 <script>
-// ── Safe Navigation (Prevents infinite recursion) ─────────────────
-function navigate(page) {
-  const root = getDashboardRoot();
-  
-  const pageMap = {
-    dashboard:      root + 'dashboard.html',
-    live:           root + 'pages/live.html',
-    consumption:    root + 'pages/consumption.html',
-    forecast:       root + 'pages/forecast.html',
-    lstm_dashboard: root + 'pages/lstm_dashboard.html',
-    ai_assistant:   root + 'pages/ai_assistant.html',
-    anomalies:      root + 'pages/anomalies.html',
-    billing:        root + 'pages/billing.html',
-    upload:         root + 'pages/upload.html',
-    export:         root + 'pages/export.html',
-    switch_user:    root + 'pages/switch_user.html',
-    block_gh:       root + 'pages/block_gh.html',
-    block_bh:       root + 'pages/block_bh.html',
-    block_ab1:      root + 'pages/block_ab1.html',
-    block_ab2:      root + 'pages/block_ab2.html',
-    block_adm:      root + 'pages/block_adm.html',
-  };
-
-  if (pageMap[page]) {
-    window.location.href = pageMap[page];
-    return;
-  }
-
-  console.warn('[WattWise] Unknown page:', page);
-}
-
-// ── State ─────────────────────────────────────────────────
-let history  = [];
-let isBusy   = false;
+let history   = [];
+let isBusy    = false;
 let sentCount = 0;
 const username = localStorage.getItem('username') || 'User';
 
@@ -326,7 +297,6 @@ document.addEventListener('DOMContentLoaded', () => {
   appendAI(`**WattWise AI online.**\n\nI have full context for your campus — **4,206 kWh** across 5 blocks, week of Jan 06–12, 2025. **5 anomalies** detected. LSTM model accuracy: **94.2%**.\n\nAsk me anything about energy usage, cost reduction, anomalies, or forecasts.`);
 });
 
-// ── Send message ──────────────────────────────────────────
 async function sendMessage() {
   const input = document.getElementById('chatInput');
   const text  = input.value.trim();
@@ -355,27 +325,21 @@ async function sendMessage() {
   try {
     const res = await fetch('http://localhost:5000/ai/chat', {
       method:  'POST',
-      headers: {
-        'Content-Type':  'application/json',
-        'Authorization': 'Bearer ' + token
-      },
-      body: JSON.stringify({ messages: history })
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body:    JSON.stringify({ messages: history })
     });
-
     const data = await res.json();
 
+    removeTyping();
     if (!data.success) {
-      removeTyping();
       appendAI('⚠ **Backend error:** ' + (data.message || 'Unknown error.'));
     } else {
-      removeTyping();
       appendAI(data.reply);
       history.push({ role: 'assistant', content: data.reply });
       if (history.length > 20) history = history.slice(-20);
       updateCounters();
     }
-
-  } catch (err) {
+  } catch {
     removeTyping();
     appendAI(`⚠ **Cannot reach backend** on port 5000.\n\nMake sure your server is running:\n\`node server.js\``);
   } finally {
@@ -385,13 +349,12 @@ async function sendMessage() {
   }
 }
 
-// ── DOM helpers ───────────────────────────────────────────
 function appendUser(text) {
   const box = document.getElementById('chatMessages');
   const el  = document.createElement('div');
   el.className = 'msg user';
   el.innerHTML = `
-    <div class="msg-av">${username[0].toUpperCase()}</div>
+    <div class="msg-av">${esc(username[0].toUpperCase())}</div>
     <div>
       <div class="msg-bbl">${esc(text)}</div>
       <div class="msg-ts">${now()}</div>
@@ -417,7 +380,7 @@ function appendAI(text) {
 function showTyping() {
   const box = document.getElementById('chatMessages');
   const el  = document.createElement('div');
-  el.className = 'msg ai'; 
+  el.className = 'msg ai';
   el.id = 'typingMsg';
   el.innerHTML = `
     <div class="msg-av"><i class="fas fa-robot"></i></div>
@@ -435,9 +398,9 @@ function removeTyping() {
 }
 
 function clearChat() {
-  history  = [];
+  history   = [];
   sentCount = 0;
-  isBusy   = false;
+  isBusy    = false;
   document.getElementById('chatMessages').innerHTML = '';
   document.getElementById('chipsBar').style.display = 'flex';
   document.getElementById('sendBtn').disabled = false;
@@ -451,18 +414,16 @@ function useChip(el) {
 }
 
 function fillAndSend(el) {
-  const text = el.textContent.replace(/^→\s*/, '').trim();
-  document.getElementById('chatInput').value = text;
+  document.getElementById('chatInput').value = el.textContent.replace(/^→\s*/, '').trim();
   sendMessage();
 }
 
 function updateCounters() {
-  document.getElementById('msgCount').textContent = sentCount + ' message' + (sentCount !== 1 ? 's' : '');
+  document.getElementById('msgCount').textContent  = sentCount + ' message' + (sentCount !== 1 ? 's' : '');
   document.getElementById('sentCount').textContent = sentCount;
   document.getElementById('histCount').textContent = history.length;
 }
 
-// ── Minimal markdown renderer ─────────────────────────────
 function md(text) {
   return text
     .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
@@ -473,7 +434,7 @@ function md(text) {
 }
 
 function esc(t) {
-  return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
 function now() {
