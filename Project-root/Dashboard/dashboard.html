@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
   <title>WattWise – Campus Dashboard</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"/>
   <link rel="stylesheet" href="css/shared.css"/>
@@ -32,13 +33,13 @@
     .billing-row strong{color:var(--accent2);}
     .billing-total{border-top:1px solid var(--border2);margin-top:4px;padding-top:8px;}
     .billing-total strong{color:var(--accent);font-family:var(--font-head);font-size:0.95rem;}
-    /* give the chart a reliable height so Chart.js can size itself */
     #mainChart { display:block; }
     @media(max-width:900px){.appliance-grid{grid-template-columns:repeat(3,1fr);}}
   </style>
 </head>
 <body>
-<!-- ── SIDEBAR (FIXED: added opening <aside> tag) ── -->
+
+<!-- SIDEBAR -->
 <aside class="sidebar">
   <div class="sidebar-logo"><h1>WATT<br>WISE</h1><p>Energy Monitor</p></div>
   <div class="sidebar-user">
@@ -75,6 +76,7 @@
     <a class="nav-item danger" id="logoutBtn"><i class="fas fa-right-from-bracket"></i> Sign Out</a>
   </div>
 </aside>
+
 <main class="main">
   <div class="topbar">
     <div class="topbar-left">
@@ -143,8 +145,9 @@
           <div class="refresh-item"><span>Last Run</span><strong id="lastRun">—</strong></div>
           <div class="refresh-item"><span>Status</span><strong style="color:var(--accent)">Ready</strong></div>
         </div>
-        <!-- give this button a specific id so runForecast() can target it safely -->
-        <button class="btn btn-full" id="forecastBtn" onclick="runForecast()"><i class="fas fa-rotate"></i> Run Forecast Now</button>
+        <button class="btn btn-full" id="forecastBtn" onclick="runForecast()">
+          <i class="fas fa-rotate"></i> Run Forecast Now
+        </button>
       </div>
       <div class="card anomaly-card">
         <div class="card-label" style="color:var(--danger)"><i class="fas fa-triangle-exclamation"></i> Anomaly Detection</div>
@@ -177,11 +180,12 @@
   <div class="grid-21">
     <div class="card">
       <div class="card-label"><i class="fas fa-chart-area"></i> 7-Day Campus Consumption (All Blocks)</div>
-      <!-- chart-wrap height comes from shared.css; explicit style ensures Chart.js sizes correctly -->
-      <div class="chart-wrap" style="height:260px;"><canvas id="mainChart"></canvas></div>
+      <div class="chart-wrap" style="height:260px;">
+        <canvas id="mainChart"></canvas>
+      </div>
     </div>
     <div class="card">
-      <div class="card-label"><i class="fas fa-file-invoice-dollar"></i> Billing Summary (@ &#8377;8.5/kWh)</div>
+      <div class="card-label"><i class="fas fa-file-invoice-dollar"></i> Billing Summary (@ ₹8.5/kWh)</div>
       <div id="dashBillingRows"></div>
       <div style="margin-top:8px" id="dashBudgetBadge"></div>
       <button class="btn btn-full" style="margin-top:10px;font-size:0.65rem" onclick="navigate('billing')">
@@ -207,13 +211,13 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('dateStr').textContent  = new Date().toLocaleDateString('en-IN', {dateStyle:'medium'});
     document.getElementById('lastRun').textContent  = new Date().toLocaleTimeString('en-IN', {timeStyle:'short'});
 
-    // ── 7-day chart ────────────────────────────────────────
+    // ── 7-day chart with Purple Girls Hostel ────────────────────────────────────────
     lineChart('mainChart', WW.dates, [
-      dataset('Girls Hostel', WW.blocks['G-H'].daily,   'rgb(0,255,65)'),
-      dataset('Boys Hostel',  WW.blocks['B-H'].daily,   'rgb(0,204,51)'),
-      dataset('Academic 1',   WW.blocks['AB1'].daily,   'rgb(0,170,255)'),
-      dataset('Academic 2',   WW.blocks['AB2'].daily,   'rgb(255,170,0)'),
-      dataset('Admin',        WW.blocks['ADMIN'].daily, 'rgb(255,100,50)')
+      dataset('Girls Hostel', WW.blocks['G-H'].daily, 'G-H'),     // Purple
+      dataset('Boys Hostel',  WW.blocks['B-H'].daily, 'B-H'),
+      dataset('Academic 1',   WW.blocks['AB1'].daily, 'AB1'),
+      dataset('Academic 2',   WW.blocks['AB2'].daily, 'AB2'),
+      dataset('Admin',        WW.blocks['ADMIN'].daily, 'ADMIN')
     ]);
 
     buildDashBilling();
@@ -242,13 +246,13 @@ function buildDashBilling() {
       : '';
     return `<div class="billing-row">
               <span>${WW.blocks[b].label}</span>
-              <strong>&#8377;${cost.toLocaleString('en-IN')}${indicator}</strong>
+              <strong>₹${cost.toLocaleString('en-IN')}${indicator}</strong>
             </div>`;
   });
 
   rows.push(`<div class="billing-row billing-total">
                <span>Campus Total</span>
-               <strong>&#8377;${grand.toLocaleString('en-IN', {maximumFractionDigits:0})}</strong>
+               <strong>₹${grand.toLocaleString('en-IN', {maximumFractionDigits:0})}</strong>
              </div>`);
 
   document.getElementById('dashBillingRows').innerHTML = rows.join('');
