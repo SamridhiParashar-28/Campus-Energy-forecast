@@ -1,5 +1,64 @@
 // shared.js — WattWise (Consistent Block Colors + Line-Only Charts)
 
+/* ── THEME ── */
+const THEME_KEY = 'ww_theme';
+
+function initTheme() {
+  const saved = localStorage.getItem(THEME_KEY) || 'dark';
+  document.documentElement.setAttribute('data-theme', saved);
+}
+initTheme(); // run immediately to prevent flash
+
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme') || 'dark';
+  const next    = current === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem(THEME_KEY, next);
+  // Update button icon + label
+  const btn = document.getElementById('themeToggleBtn');
+  if (btn) {
+    btn.innerHTML = next === 'light'
+      ? '<i class="fas fa-moon"></i> Dark Mode'
+      : '<i class="fas fa-sun"></i> Light Mode';
+  }
+  // Refresh all active charts
+  if (typeof Chart !== 'undefined') {
+    const colors = getChartColors();
+    Chart.instances && Object.values(Chart.instances).forEach(chart => {
+      chart.options.scales.y.ticks.color   = colors.tick;
+      chart.options.scales.x.ticks.color   = colors.tick;
+      chart.options.scales.y.grid.color    = colors.grid;
+      chart.options.plugins.legend.labels.color = colors.legend;
+      chart.options.plugins.tooltip.backgroundColor = colors.tooltipBg;
+      chart.options.plugins.tooltip.titleColor      = colors.tooltipTitle;
+      chart.options.plugins.tooltip.bodyColor       = colors.tooltipBody;
+      chart.options.plugins.tooltip.borderColor     = colors.tooltipBorder;
+      chart.update();
+    });
+  }
+}
+
+function getChartColors() {
+  const light = document.documentElement.getAttribute('data-theme') === 'light';
+  return light ? {
+    tick:         '#4a804a',
+    grid:         'rgba(10,124,47,0.10)',
+    legend:       '#1a4d1a',
+    tooltipBg:    '#ffffff',
+    tooltipTitle: '#0a7c2f',
+    tooltipBody:  '#0d9938',
+    tooltipBorder:'#b2d4b2'
+  } : {
+    tick:         '#007a1f',
+    grid:         'rgba(0,255,65,0.06)',
+    legend:       '#00cc33',
+    tooltipBg:    '#010d01',
+    tooltipTitle: '#00ff41',
+    tooltipBody:  '#00cc33',
+    tooltipBorder:'#00551a'
+  };
+}
+
 const WW = {
   dates: ['Jan 06', 'Jan 07', 'Jan 08', 'Jan 09', 'Jan 10', 'Jan 11', 'Jan 12'],
   blocks: {
@@ -106,6 +165,20 @@ function initSidebar(activeId) {
       window.location.replace(getPublicLogin());
     });
   }
+
+  // Inject theme toggle button into sidebar-bottom
+  const sidebarBottom = document.querySelector('.sidebar-bottom');
+  if (sidebarBottom && !document.getElementById('themeToggleBtn')) {
+    const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+    const btn = document.createElement('button');
+    btn.id        = 'themeToggleBtn';
+    btn.className = 'theme-toggle-btn';
+    btn.innerHTML = isLight
+      ? '<i class="fas fa-moon"></i> Dark Mode'
+      : '<i class="fas fa-sun"></i> Light Mode';
+    btn.addEventListener('click', toggleTheme);
+    sidebarBottom.appendChild(btn);
+  }
 }
 
 // Navigation
@@ -149,13 +222,30 @@ const CHART_DEFAULTS = {
   }
 };
 
+function buildChartDefaults() {
+  const c = getChartColors();
+  return {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: { mode: 'index', intersect: false },
+    scales: {
+      y: { beginAtZero: true, ticks: { color: c.tick, font: { family: "'Share Tech Mono'", size: 10 } }, grid: { color: c.grid } },
+      x: { ticks: { color: c.tick, font: { family: "'Share Tech Mono'", size: 10 } }, grid: { display: false } }
+    },
+    plugins: {
+      legend:  { labels: { color: c.legend, font: { family: "'Share Tech Mono'", size: 11 }, boxWidth: 12 } },
+      tooltip: { backgroundColor: c.tooltipBg, borderColor: c.tooltipBorder, borderWidth: 1, titleColor: c.tooltipTitle, bodyColor: c.tooltipBody }
+    }
+  };
+}
+
 function lineChart(id, labels, datasets) {
   const el = document.getElementById(id);
   if (!el) return null;
   return new Chart(el.getContext('2d'), {
     type: 'line',
     data: { labels, datasets },
-    options: JSON.parse(JSON.stringify(CHART_DEFAULTS))
+    options: buildChartDefaults()
   });
 }
 
