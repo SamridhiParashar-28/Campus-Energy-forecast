@@ -16,5 +16,17 @@
     "password": "$2b$12$GGleZHBLRykgANNk1GcJ0e/GfVMImAB3Yvd98EO1OWhgMsTBFqRoy",
     "role": "admin",
     "createdAt": "2026-03-27T11:04:35.006Z"
+  },
+  {
+    "username": "sam",
+    "password": "$2b$12$KnCoUm9B3mW9hC9UC81dO.Ir5E1zrHxMBQ8q6RZlRnM3clDxWB69y",
+    "role": "viewer",
+    "createdAt": "2026-03-28T05:43:37.693Z"
+  },
+  {
+    "username": "ayushi",
+    "password": "$2b$12$YH3Wlr2BtVFnbTRosgphju4/ZEBLGvjczVxEFVwrIEpQ5yij6lqXy",
+    "role": "viewer",
+    "createdAt": "2026-03-28T06:19:57.191Z"
   }
 ]
