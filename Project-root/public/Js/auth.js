@@ -6,6 +6,14 @@ document.addEventListener("DOMContentLoaded", () => {
   const submitBtn = document.getElementById("submitBtn");
   const errorEl   = document.getElementById("error-message");
 
+  // Pre-fill username if passed from register page
+const prefill = localStorage.getItem("prefillUsername");
+if (prefill) {
+  document.getElementById("username").value = prefill;
+  localStorage.removeItem("prefillUsername");
+}
+  
+
   // ── Password visibility toggle ─────────────────────────
   if (toggle && passInput) {
     toggle.addEventListener("click", () => {

@@ -55,36 +55,10 @@ document.addEventListener("DOMContentLoaded", () => {
         return showMessage(regData.message || "Registration failed.", "error");
       }
 
-      showMessage("Account created! Signing you in…", "success");
+    showMessage("Account created! Redirecting to sign in…", "success");
+    localStorage.setItem("prefillUsername", username);
+    window.location.href = "index.html";
 
-      // Step 2: Auto-login
-      try {
-        const loginRes  = await fetch("http://localhost:5000/login", {
-          method:  "POST",
-          headers: { "Content-Type": "application/json" },
-          body:    JSON.stringify({ username, password: passValue }),
-        });
-        const loginData = await loginRes.json();
-
-        if (loginRes.ok && loginData.success) {
-          localStorage.clear();
-          localStorage.setItem("isLoggedIn", "true");
-          localStorage.setItem("username",   loginData.username);
-          localStorage.setItem("role",       loginData.role);    // ← real role
-          localStorage.setItem("token",      loginData.token);   // ← real JWT
-
-          showMessage("All done! Going to dashboard…", "success");
-          setTimeout(() => {
-            window.location.replace("../../Dashboard/dashboard.html");
-          }, 1000);
-        } else {
-          showMessage("Account created! Please sign in.", "success");
-          setTimeout(() => window.location.replace("../index.html"), 1500);
-        }
-      } catch {
-        showMessage("Account created! Please sign in.", "success");
-        setTimeout(() => window.location.replace("../index.html"), 1500);
-      }
 
     } catch (err) {
       console.error("Registration error:", err);
