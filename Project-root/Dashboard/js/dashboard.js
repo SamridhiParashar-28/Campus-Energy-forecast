@@ -27,7 +27,7 @@ document.addEventListener("DOMContentLoaded", () => {
     logoutBtn.addEventListener("click", (e) => {
       e.preventDefault();
       localStorage.clear();
-      window.location.replace("../public/index.html");
+      window.location.replace("../wecomepage/welcome.html");
     });
   }
 

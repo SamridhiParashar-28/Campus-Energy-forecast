@@ -218,6 +218,12 @@ function getPublicLogin() {
   return root + '../public/index.html';
 }
 
+function getWelcomePage() {
+  const root = getDashboardRoot();
+  // wecomepage/ lives at /Project-root/wecomepage/ → one level up from Dashboard/
+  return root + '../wecomepage/welcome.html';
+}
+
 function authGuard() {
   if (localStorage.getItem('isLoggedIn') !== 'true') {
     window.location.replace(getPublicLogin());
@@ -278,7 +284,7 @@ function initSidebar(activeId) {
   if (logoutBtn) {
     logoutBtn.addEventListener('click', () => {
       localStorage.clear();
-      window.location.replace(getPublicLogin());
+      window.location.replace(getWelcomePage());
     });
   }
 
