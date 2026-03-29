@@ -272,7 +272,6 @@
     <a class="nav-item" data-page="anomalies"><i class="fas fa-triangle-exclamation"></i> Anomalies</a>
 
     <div class="nav-section-label">Data</div>
-    <a class="nav-item" data-page="upload"><i class="fas fa-upload"></i> Upload Data</a>
     <a class="nav-item" data-page="export"><i class="fas fa-file-export"></i> Export Report</a>
 
     <div class="nav-section-label">Blocks</div>
@@ -463,18 +462,41 @@ async function loadModelInfo() {
 async function runForecast() {
   const btn = document.getElementById('runForecastBtn');
   const token = localStorage.getItem('token');
-  if (!token) {
-    alert('Please log in first.');
-    return;
-  }
+  const activeId = localStorage.getItem('activeDatasetId');
+  if (!token) { alert('Please log in first.'); return; }
 
   btn.disabled = true;
   btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Running...';
   showLoading('RUNNING LSTM + XGB MODEL...');
 
+  let decryptedPayload = null;
+  // If user has an active dataset, securely request the backend to decrypt it
+  if (activeId) {
+    try {
+      const localKey = localStorage.getItem(`ds_key_${activeId}`);
+      if (localKey) {
+        const entryRes = await fetch(`${API_BASE}/datasets/${activeId}/entries`, {
+          headers: { 
+            'Authorization': 'Bearer ' + token,
+            'X-Encryption-Key': localKey
+          }
+        });
+        const entriesData = await entryRes.json();
+        if (entriesData.success && entriesData.entries && entriesData.entries.length > 0) {
+          decryptedPayload = entriesData.entries[0].content;
+          console.log('[Server-Side Encryption] Backend successfully unlocked active dataset:', decryptedPayload);
+        }
+      } else {
+         console.warn('[Server-Side Encryption] Missing local decryption key for dataset', activeId);
+      }
+    } catch(e) { console.warn('Dataset pull failed:', e); }
+  }
+
   try {
     const res = await fetch(`${API_BASE}/forecast/predict?days=1`, {
-      headers: { 'Authorization': 'Bearer ' + token }
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ dataset: decryptedPayload })
     });
     const data = await res.json();
 
@@ -494,7 +516,7 @@ async function runForecast() {
 
   } catch (err) {
     console.error(err);
-    alert('Cannot connect to backend. Make sure server is running on port 5000.');
+    alert('Cannot connect to backend. Make sure server is running.');
   } finally {
     hideLoading();
     btn.disabled = false;

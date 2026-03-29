@@ -309,3 +309,33 @@ body::after {
 /* ── RESPONSIVE ── */
 @media(max-width:1100px) { .grid-4{grid-template-columns:repeat(2,1fr);} .grid-21{grid-template-columns:1fr;} }
 @media(max-width:768px)  { .sidebar{display:none;} .main{margin-left:0;padding:1rem;} .grid-2,.grid-3{grid-template-columns:1fr;} }
+
+/* ── ACTIVE DATASET PILL ── */
+.active-dataset-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  background: rgba(0, 255, 65, 0.05);
+  border: 1px solid var(--accent3);
+  color: var(--accent2);
+  border-radius: 20px;
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  margin-bottom: 12px;
+  font-weight: 700;
+  box-shadow: 0 0 10px rgba(0, 255, 65, 0.05);
+  animation: fadeIn 0.4s ease-out;
+}
+.active-dataset-pill i { font-size: 0.68rem; color: var(--accent3); }
+[data-theme="light"] .active-dataset-pill {
+  background: rgba(74, 156, 255, 0.08);
+  border-color: var(--border);
+  color: var(--accent3);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
+}

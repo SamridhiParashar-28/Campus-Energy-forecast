@@ -78,7 +78,6 @@
       <a class="nav-item" data-page="ai_assistant"><i class="fas fa-robot"></i> AI Assistant</a>
       <a class="nav-item" data-page="anomalies"><i class="fas fa-triangle-exclamation"></i> Anomalies</a>
       <div class="nav-section-label">Data</div>
-      <a class="nav-item" data-page="upload"><i class="fas fa-upload"></i> Upload Data</a>
       <a class="nav-item" data-page="export"><i class="fas fa-file-export"></i> Export Report</a>
       <div class="nav-section-label">Blocks</div>
       <a class="nav-item" data-page="block_gh"><i class="fas fa-venus"></i> Girls Hostel</a>
@@ -117,29 +116,28 @@
 
   <p class="section-title">Campus Overview — Week of Jan 06–12</p>
   <div class="grid-4">
-    <div class="card upload-card" onclick="document.getElementById('csvInput').click()">
-      <input type="file" id="csvInput" accept=".csv" style="display:none" onchange="handleUpload(this)"/>
-      <div class="upload-icon"><i class="fas fa-cloud-arrow-up"></i></div>
-      <strong>Upload Meter Data</strong>
-      <p>Click to browse CSV</p>
+    <div class="card upload-card" onclick="navigate('dataset_manager')">
+      <div class="upload-icon"><i class="fas fa-database"></i></div>
+      <strong>Dataset Manager</strong>
+      <p>Upload & Manage Logs</p>
     </div>
     <div class="card">
       <div class="card-label"><i class="fas fa-bolt"></i> Total Campus kWh</div>
-      <div class="card-value">4,081</div>
+      <div class="card-value" id="totalCampusVal">0</div>
       <div class="card-sub">Week total (all blocks)</div>
-      <div class="card-change down"><i class="fas fa-arrow-down"></i> Weekends drop sharply</div>
+      <div class="card-change" id="totalChangeLabel">—</div>
     </div>
     <div class="card">
       <div class="card-label"><i class="fas fa-building"></i> Highest Block</div>
-      <div class="card-value" style="font-size:1rem;margin-top:4px">Academic 2</div>
-      <div class="card-sub">1,234.8 kWh this week</div>
-      <div class="card-change up"><i class="fas fa-arrow-up"></i> PCs + ACs dominant</div>
+      <div class="card-value" id="highestBlockVal" style="font-size:1rem;margin-top:4px">N/A</div>
+      <div id="highestBlockSub" class="card-sub">0.0 kWh this week</div>
+      <div class="card-change" id="highestChangeLabel">—</div>
     </div>
     <div class="card">
       <div class="card-label"><i class="fas fa-fire"></i> Peak Day</div>
-      <div class="card-value" style="font-size:1rem;margin-top:4px">Mon/Wed/Fri</div>
-      <div class="card-sub">Weekday peak pattern</div>
-      <div class="card-change up"><i class="fas fa-triangle-exclamation"></i> Zero usage weekends</div>
+      <div class="card-value" id="peakDayVal" style="font-size:1rem;margin-top:4px">N/A</div>
+      <div class="card-sub">Overall peak pattern</div>
+      <div class="card-change" id="peakStatusLabel">—</div>
     </div>
   </div>
 
@@ -236,10 +234,48 @@ document.addEventListener('DOMContentLoaded', () => {
     ]);
 
     buildDashBilling();
+    refreshDashboardSummaries();
   } catch (err) {
     console.error('[WattWise] Dashboard init error:', err);
   }
 });
+
+function refreshDashboardSummaries() {
+  let totalGrand = 0;
+  let highest = { name: 'N/A', val: 0 };
+  const daySums = [0,0,0,0,0,0,0]; // Mon-Sun
+  const days = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+
+  Object.values(WW.blocks).forEach(b => {
+    totalGrand += b.total;
+    if (b.total > highest.val) {
+      highest = { name: b.label, val: b.total };
+    }
+    if (b.daily && b.daily.length === 7) {
+      b.daily.forEach((v, i) => daySums[i] += v);
+    }
+  });
+
+  const maxDayVal = Math.max(...daySums);
+  const peakDayIdx = daySums.indexOf(maxDayVal);
+  const peakDay = maxDayVal > 0 ? days[peakDayIdx] : 'N/A';
+
+  // Update DOM
+  document.getElementById('totalCampusVal').textContent = totalGrand.toLocaleString('en-IN', {maximumFractionDigits:1});
+  document.getElementById('highestBlockVal').textContent = highest.name;
+  document.getElementById('highestBlockSub').textContent = highest.val.toFixed(1) + ' kWh this week';
+  document.getElementById('peakDayVal').textContent = peakDay;
+
+  if (totalGrand === 0) {
+    document.getElementById('totalChangeLabel').textContent = 'No data logs yet';
+    document.getElementById('highestChangeLabel').textContent = '—';
+    document.getElementById('peakStatusLabel').textContent = '—';
+  } else {
+    document.getElementById('totalChangeLabel').textContent = 'Live data sync';
+    document.getElementById('highestChangeLabel').textContent = 'Top contributor';
+    document.getElementById('peakStatusLabel').textContent = 'Peak usage detected';
+  }
+}
 
 function buildDashBilling() {
   const RATE   = 8.5;

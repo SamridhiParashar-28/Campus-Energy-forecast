@@ -2,22 +2,16 @@ const express = require('express');
 const cors = require('cors');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const fs = require('fs');
-const path = require('path');
+const crypto = require('crypto');
 require('dotenv').config();
+const db = require('./db.js');
+
+// Fix: node:sqlite returns BigInt for AUTOINCREMENT ids - patch JSON serialization globally
+BigInt.prototype.toJSON = function() { return Number(this); };
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 const JWT_SECRET = process.env.JWT_SECRET || 'wattwise-super-secret-change-in-production-2026';
-
-const USERS_FILE = path.join(__dirname, 'data', 'users.json');
-
-function ensureUsersFile() {
-  const dir = path.dirname(USERS_FILE);
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-  if (!fs.existsSync(USERS_FILE)) fs.writeFileSync(USERS_FILE, '[]', 'utf8');
-}
-ensureUsersFile();
 
 const allowedOrigins = [
   'http://localhost:5500',
@@ -26,7 +20,12 @@ const allowedOrigins = [
   'http://127.0.0.1:3000'
 ];
 
-app.use(cors({ origin: allowedOrigins, credentials: true }));
+app.use(cors({
+  origin: allowedOrigins,
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Encryption-Key']
+}));
 app.use(express.json({ limit: '10kb' }));
 
 app.use((req, res, next) => {
@@ -34,21 +33,31 @@ app.use((req, res, next) => {
   next();
 });
 
-// ── File helpers ───────────────────────────────────────────
-function loadUsers() {
-  try {
-    return JSON.parse(fs.readFileSync(USERS_FILE, 'utf8'));
-  } catch {
-    return [];
-  }
-}
-
-function saveUsers(users) {
-  fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2), 'utf8');
-}
+// ── Helpers ────────────────────────────────────────────────
 
 function sanitise(str) {
   return (str || '').trim().replace(/[\x00-\x1F\x7F]/g, '');
+}
+
+function encryptBlob(dataObj, hexKey) {
+  const iv = crypto.randomBytes(12);
+  const cipher = crypto.createCipheriv('aes-256-gcm', Buffer.from(hexKey, 'hex'), iv);
+  const jsonStr = JSON.stringify(dataObj);
+  let encrypted = cipher.update(jsonStr, 'utf8', 'base64');
+  encrypted += cipher.final('base64');
+  const authTag = cipher.getAuthTag().toString('base64');
+  return `${iv.toString('base64')}:${authTag}:${encrypted}`;
+}
+
+function decryptBlob(blobStr, hexKey) {
+  const [ivB64, authB64, encB64] = blobStr.split(':');
+  const iv = Buffer.from(ivB64, 'base64');
+  const authTag = Buffer.from(authB64, 'base64');
+  const decipher = crypto.createDecipheriv('aes-256-gcm', Buffer.from(hexKey, 'hex'), iv);
+  decipher.setAuthTag(authTag);
+  let decrypted = decipher.update(encB64, 'base64', 'utf8');
+  decrypted += decipher.final('utf8');
+  return JSON.parse(decrypted);
 }
 
 // ── JWT Middleware ────────────────────────────────────────
@@ -71,35 +80,19 @@ app.post('/register', async (req, res) => {
     const username = sanitise(req.body.username || '');
     const password = (req.body.password || '').trim();
 
-    if (!username || !password) {
-      return res.status(400).json({ success: false, message: 'Username and password are required.' });
-    }
-    if (username.length < 3 || username.length > 50) {
-      return res.status(400).json({ success: false, message: 'Username must be 3–50 characters.' });
-    }
-    if (password.length < 6) {
-      return res.status(400).json({ success: false, message: 'Password must be at least 6 characters.' });
-    }
+    if (!username || !password) return res.status(400).json({ success: false, message: 'Username and password required.' });
+    if (username.length < 3 || username.length > 50) return res.status(400).json({ success: false, message: 'Username length 3-50.' });
+    if (password.length < 6) return res.status(400).json({ success: false, message: 'Password length >= 6.' });
 
-    const users = loadUsers();
-    if (users.find(u => u.username.toLowerCase() === username.toLowerCase())) {
-      return res.status(409).json({ success: false, message: 'Username already taken.' });
-    }
+    const existing = db.prepare('SELECT id FROM users WHERE LOWER(username) = LOWER(?)').get(username);
+    if (existing) return res.status(409).json({ success: false, message: 'Username already taken.' });
 
     const hashed = await bcrypt.hash(password, 12);
-    const newUser = {
-      username,
-      password: hashed,
-      role: users.length === 0 ? 'admin' : 'viewer', // first user is admin
-      createdAt: new Date().toISOString()
-    };
-    users.push(newUser);
-    saveUsers(users);
-
+    db.prepare('INSERT INTO users (username, password_hash) VALUES (?, ?)').run(username, hashed);
     return res.status(201).json({ success: true, message: 'Account created successfully.' });
   } catch (err) {
-    console.error('[register]', err);
-    return res.status(500).json({ success: false, message: 'Server error during registration.' });
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Server error.' });
   }
 });
 
@@ -109,88 +102,187 @@ app.post('/login', async (req, res) => {
     const username = sanitise(req.body.username || '');
     const password = (req.body.password || '').trim();
 
-    if (!username || !password) {
-      return res.status(400).json({ success: false, message: 'Username and password are required.' });
-    }
+    if (!username || !password) return res.status(400).json({ success: false, message: 'Credentials required.' });
 
-    const users = loadUsers();
-    const user = users.find(u => u.username.toLowerCase() === username.toLowerCase());
+    const user = db.prepare('SELECT * FROM users WHERE LOWER(username) = LOWER(?)').get(username);
+    if (!user) return res.status(401).json({ success: false, message: 'Invalid credentials.' });
 
-    if (!user) {
-      return res.status(401).json({ success: false, message: 'Invalid username or password.' });
-    }
+    const match = await bcrypt.compare(password, user.password_hash);
+    if (!match) return res.status(401).json({ success: false, message: 'Invalid credentials.' });
 
-    const match = await bcrypt.compare(password, user.password);
-    if (!match) {
-      return res.status(401).json({ success: false, message: 'Invalid username or password.' });
-    }
-
-    const token = jwt.sign(
-      { username: user.username, role: user.role },
-      JWT_SECRET,
-      { expiresIn: '8h' }
-    );
-
-    return res.json({
-      success: true,
-      username: user.username,
-      role: user.role,
-      token
-    });
+    const token = jwt.sign({ id: user.id, username: user.username }, JWT_SECRET, { expiresIn: '8h' });
+    return res.json({ success: true, username: user.username, userId: user.id, token });
   } catch (err) {
-    console.error('[login]', err);
-    return res.status(500).json({ success: false, message: 'Server error during login.' });
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Server error.' });
   }
 });
 
-// ── GET /users ─────────────────────────────────────────────
-app.get('/users', verifyToken, (req, res) => {
-  if (req.user.role !== 'admin') {
-    return res.status(403).json({ success: false, message: 'Admin access required.' });
+// ── DATASETS AND E2EE API ─────────────────────────────────
+
+// GET /datasets -> List datasets I have access to
+app.get('/datasets', verifyToken, (req, res) => {
+  try {
+    const rows = db.prepare(`
+      SELECT d.id, d.name, d.description, d.created_at, r.role 
+      FROM datasets d
+      JOIN dataset_roles r ON d.id = r.dataset_id
+      WHERE r.user_id = ?
+    `).all(Number(req.user.id));
+    return res.json({ success: true, datasets: rows });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Server error.' });
   }
-  const users = loadUsers().map(({ password, ...rest }) => rest); // strip hashed passwords
-  return res.json({ success: true, users });
 });
 
-// ── POST /users/role ───────────────────────────────────────
-app.post('/users/role', verifyToken, (req, res) => {
-  if (req.user.role !== 'admin') {
-    return res.status(403).json({ success: false, message: 'Admin access required.' });
+// POST /datasets -> Create a new E2EE dataset
+app.post('/datasets', verifyToken, (req, res) => {
+  try {
+    const { name, description } = req.body;
+    if (!name) return res.status(400).json({ success: false, message: 'Name required.' });
+
+    const createDataset = db.transaction(() => {
+      const result = db.prepare('INSERT INTO datasets (name, description) VALUES (?, ?)').run(String(name), String(description || ''));
+      const datasetId = Number(result.lastInsertRowid);
+      db.prepare('INSERT INTO dataset_roles (dataset_id, user_id, role) VALUES (?, ?, ?)')
+        .run(datasetId, Number(req.user.id), 'admin');
+      return datasetId;
+    });
+
+    const datasetId = createDataset();
+    const secretKey = crypto.randomBytes(32).toString('hex');
+    return res.json({ success: true, datasetId: Number(datasetId), key: secretKey, message: 'Dataset created.' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Server error.' });
   }
-  const { username, role } = req.body;
-  if (!username || !['admin', 'viewer'].includes(role)) {
-    return res.status(400).json({ success: false, message: 'Invalid username or role.' });
-  }
-  const users = loadUsers();
-  const idx = users.findIndex(u => u.username === username);
-  if (idx === -1) {
-    return res.status(404).json({ success: false, message: 'User not found.' });
-  }
-  users[idx].role = role;
-  saveUsers(users);
-  return res.json({ success: true, message: `${username} is now ${role}.` });
 });
 
-// ── POST /users/delete ─────────────────────────────────────
-app.post('/users/delete', verifyToken, (req, res) => {
-  if (req.user.role !== 'admin') {
-    return res.status(403).json({ success: false, message: 'Admin access required.' });
+// POST /datasets/:id/invite -> Generate 15-min OTP
+app.post('/datasets/:id/invite', verifyToken, (req, res) => {
+  try {
+    const datasetId = Number(req.params.id);
+    const userId = Number(req.user.id);
+    const roleCheck = db.prepare('SELECT role FROM dataset_roles WHERE dataset_id = ? AND user_id = ?').get(datasetId, userId);
+    if (!roleCheck || roleCheck.role !== 'admin') return res.status(403).json({ success: false, message: 'Admin access required.' });
+
+    const otpCode = crypto.randomBytes(3).toString('hex').toUpperCase();
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
+    
+    db.prepare('INSERT INTO dataset_invites (dataset_id, otp_code, expires_at, created_by) VALUES (?, ?, ?, ?)')
+      .run(datasetId, String(otpCode), String(expiresAt), userId);
+      
+    return res.json({ success: true, otp_code: String(otpCode), expires_at: String(expiresAt) });
+  } catch (err) {
+    console.error('[invite error]', err);
+    res.status(500).json({ success: false, message: 'Server error: ' + err.message });
   }
-  const { username } = req.body;
-  if (!username) {
-    return res.status(400).json({ success: false, message: 'Username required.' });
+});
+
+// POST /datasets/join -> Join using OTP
+app.post('/datasets/join', verifyToken, (req, res) => {
+  try {
+    const { otp_code } = req.body;
+    if (!otp_code) return res.status(400).json({ success: false, message: 'OTP required.' });
+
+    const invite = db.prepare('SELECT id, dataset_id, expires_at FROM dataset_invites WHERE otp_code = ?').get(String(otp_code));
+    if (!invite) return res.status(404).json({ success: false, message: 'Invalid OTP.' });
+    if (new Date(invite.expires_at) < new Date()) {
+      db.prepare('DELETE FROM dataset_invites WHERE id = ?').run(invite.id);
+      return res.status(400).json({ success: false, message: 'OTP expired.' });
+    }
+
+    const joinTx = db.transaction(() => {
+      db.prepare('INSERT OR IGNORE INTO dataset_roles (dataset_id, user_id, role) VALUES (?, ?, ?)')
+        .run(Number(invite.dataset_id), Number(req.user.id), 'viewer');
+      db.prepare('DELETE FROM dataset_invites WHERE id = ?').run(Number(invite.id));
+    });
+    joinTx();
+
+    return res.json({ success: true, message: 'Joined dataset successfully.', dataset_id: invite.dataset_id });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Server error.' });
   }
-  if (username === req.user.username) {
-    return res.status(400).json({ success: false, message: 'Cannot delete your own account.' });
+});
+
+// GET /datasets/:id/entries -> Fetch and server-decrypt blob
+app.get('/datasets/:id/entries', verifyToken, (req, res) => {
+  try {
+    const datasetId = req.params.id;
+    const hexKey = req.headers['x-encryption-key'];
+    if (!hexKey) return res.status(400).json({ success: false, message: 'X-Encryption-Key header missing.' });
+
+    const roleCheck = db.prepare('SELECT role FROM dataset_roles WHERE dataset_id = ? AND user_id = ?').get(Number(datasetId), Number(req.user.id));
+    if (!roleCheck) return res.status(403).json({ success: false, message: 'Access denied.' });
+
+    const entries = db.prepare('SELECT encrypted_content, created_at FROM dataset_entries WHERE dataset_id = ? ORDER BY id DESC LIMIT 100').all(Number(datasetId));
+    let clearEntries = [];
+    try {
+      clearEntries = entries.map(e => ({
+         created_at: e.created_at,
+         content: decryptBlob(e.encrypted_content, hexKey)
+      }));
+    } catch(err) {
+      return res.status(400).json({ success: false, message: 'Decryption failed. Invalid Key.' });
+    }
+    return res.json({ success: true, entries: clearEntries });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Server error.' });
   }
-  let users = loadUsers();
-  const before = users.length;
-  users = users.filter(u => u.username !== username);
-  if (users.length === before) {
-    return res.status(404).json({ success: false, message: 'User not found.' });
+});
+
+// POST /datasets/:id/entries -> Server-encrypt & Upload blob
+app.post('/datasets/:id/entries', verifyToken, (req, res) => {
+  try {
+    const datasetId = req.params.id;
+    const hexKey = req.headers['x-encryption-key'];
+    if (!hexKey) return res.status(400).json({ success: false, message: 'X-Encryption-Key header missing.' });
+    
+    const { content } = req.body;
+    if (!content) return res.status(400).json({ success: false, message: 'No content array provided.' });
+
+    const roleCheck = db.prepare('SELECT role FROM dataset_roles WHERE dataset_id = ? AND user_id = ?').get(Number(datasetId), Number(req.user.id));
+    if (!roleCheck || (roleCheck.role !== 'admin' && roleCheck.role !== 'editor')) {
+      return res.status(403).json({ success: false, message: 'Admin or Editor access required.' });
+    }
+
+    let encrypted_content;
+    try {
+      encrypted_content = encryptBlob(content, hexKey);
+    } catch (e) {
+      return res.status(400).json({ success: false, message: 'Encryption failed. Invalid key.' });
+    }
+
+    db.prepare('INSERT INTO dataset_entries (dataset_id, encrypted_content, created_by) VALUES (?, ?, ?)')
+      .run(Number(datasetId), String(encrypted_content), Number(req.user.id));
+      
+    return res.json({ success: true, message: 'Entries added successfully.' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Server error.' });
   }
-  saveUsers(users);
-  return res.json({ success: true, message: `${username} deleted.` });
+});
+
+// DELETE /datasets/:id/entries -> Clear all entries (Admin only)
+app.delete('/datasets/:id/entries', verifyToken, (req, res) => {
+  try {
+    const datasetId = Number(req.params.id);
+    const userId = Number(req.user.id);
+    const roleCheck = db.prepare('SELECT role FROM dataset_roles WHERE dataset_id = ? AND user_id = ?').get(datasetId, userId);
+    
+    if (!roleCheck || roleCheck.role !== 'admin') {
+      return res.status(403).json({ success: false, message: 'Admin access required to clear data.' });
+    }
+
+    db.prepare('DELETE FROM dataset_entries WHERE dataset_id = ?').run(datasetId);
+    return res.json({ success: true, message: 'Dataset cleared successfully.' });
+  } catch (err) {
+    console.error('[clear error]', err);
+    res.status(500).json({ success: false, message: 'Server error: ' + err.message });
+  }
 });
 
 // ── POST /ai/chat — Gemini proxy ──────────────────────────
@@ -295,17 +387,28 @@ app.get('/forecast/history', verifyToken, (req, res) => {
   return res.json({ success: true, history, total: history.length });
 });
 
-// ── GET /forecast/predict ─────────────────────────────────
-app.get('/forecast/predict', verifyToken, (req, res) => {
-  const days = parseInt(req.query.days) || 1;
+// ── POST /forecast/predict ─────────────────────────────────
+// Updated to natively read dynamic user-created decrypted datasets (client -> server -> prediction)
+app.all('/forecast/predict', verifyToken, (req, res) => {
+  const days = parseInt(req.body.days || req.query.days) || 1;
+  const customDataset = req.body.dataset; // Cleartext array from client
 
-  const blockDefs = {
-    'G-H':   { label: 'Girls Hostel',   avg: 85.64  },
-    'B-H':   { label: 'Boys Hostel',    avg: 85.64  },
-    'AB1':   { label: 'Academic Blk 1', avg: 88.84  },
-    'AB2':   { label: 'Academic Blk 2', avg: 176.4  },
-    'ADMIN': { label: 'Admin Block',    avg: 164.38 }
-  };
+  let blockDefs = {};
+
+  if (customDataset && Array.isArray(customDataset) && customDataset.length > 0) {
+    customDataset.forEach(entry => {
+      const key = entry.blockKey || entry.label || 'UNKNOWN';
+      if (!blockDefs[key]) blockDefs[key] = { label: key, avg: 0, count: 0 };
+      blockDefs[key].avg += Number(entry.usage || entry.avg || 0);
+      blockDefs[key].count++;
+    });
+    Object.keys(blockDefs).forEach(k => {
+      blockDefs[k].avg = blockDefs[k].avg / blockDefs[k].count;
+    });
+  } else {
+    // If no dataset, return empty blocks
+    return res.json({ success: true, blocks: {}, days, status: 'no_data' });
+  }
 
   const blocks = {};
   Object.entries(blockDefs).forEach(([key, def]) => {
@@ -346,11 +449,17 @@ app.post('/forecast/retrain', verifyToken, (req, res) => {
   return res.json({ success: true, message: 'Retrain job queued.' });
 });
 
+// ── GET /me — Verify token identity ──────────────────────
+app.get('/me', verifyToken, (req, res) => {
+  const user = db.prepare('SELECT id, username FROM users WHERE id = ?').get(Number(req.user.id));
+  return res.json({ success: true, tokenUserId: req.user.id, dbUser: user });
+});
+
 // ── GET /health ───────────────────────────────────────────
 app.get('/health', (req, res) => res.json({ status: 'ok', ts: new Date().toISOString() }));
 
 // ── Start ─────────────────────────────────────────────────
 app.listen(PORT, () => {
   console.log(`WattWise Server running on http://localhost:${PORT}`);
-  console.log(`Users file: ${USERS_FILE}`);
+  console.log(`Database: SQLite (node:sqlite)`);
 });
