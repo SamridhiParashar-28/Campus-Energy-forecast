@@ -60,40 +60,42 @@ function getChartColors() {
 const WW = {
   dates: ['Jan 06', 'Jan 07', 'Jan 08', 'Jan 09', 'Jan 10', 'Jan 11', 'Jan 12'],
   blocks: {
-    'G-H':   { 
-      label: 'Girls Hostel',    
-      icon: 'fa-venus',            
-      daily: [85.64, 85.64, 85.64, 85.64, 85.64, 85.64, 85.64], 
-      total: 599.48,  avg: 85.64,  peak: 85.64,  rate: 8.5, 
-      appliances: [['AC', 252.0], ['Geyser', 252.0], ['Power Socket', 63.0], ['Sockets', 18.9], ['Fan', 6.3], ['Tubelights', 5.04], ['Bulbs', 2.24]] 
+    'G-H':   {
+      label: 'Girls Hostel',
+      icon: 'fa-venus',
+      // Mon high (AC+Geyser full), Tue lighter, Wed high, Thu lighter, Fri high, Sat/Sun reduced
+      daily: [92.4, 78.2, 94.1, 76.8, 91.6, 61.3, 58.7],
+      total: 553.1, avg: 79.0, peak: 94.1, rate: 8.5,
+      appliances: [['AC', 238.0], ['Geyser', 210.0], ['Power Socket', 58.5], ['Sockets', 22.4], ['Fan', 12.6], ['Tubelights', 7.56], ['Bulbs', 4.04]]
     },
-    'B-H':   { 
-      label: 'Boys Hostel',     
-      icon: 'fa-mars',             
-      daily: [85.64, 85.64, 85.64, 85.64, 85.64, 85.64, 85.64], 
-      total: 599.48,  avg: 85.64,  peak: 85.64,  rate: 8.5, 
-      appliances: [['AC', 252.0], ['Geyser', 252.0], ['Power Socket', 63.0], ['Sockets', 18.9], ['Fan', 6.3], ['Tubelights', 5.04], ['Bulbs', 2.24]] 
+    'B-H':   {
+      label: 'Boys Hostel',
+      icon: 'fa-mars',
+      // Boys pattern: lower Mon, spikes Thu/Fri, weekends moderate
+      daily: [74.3, 81.6, 77.9, 89.2, 93.8, 55.4, 48.9],
+      total: 521.1, avg: 74.4, peak: 93.8, rate: 8.5,
+      appliances: [['AC', 198.0], ['Geyser', 185.0], ['Power Socket', 72.0], ['Sockets', 31.5], ['Fan', 18.9], ['Tubelights', 9.45], ['Bulbs', 6.25]]
     },
-    'AB1':   { 
-      label: 'Academic Blk 1',  
-      icon: 'fa-building-columns', 
-      daily: [177.3, 45.0, 177.3, 45.0, 177.3, 0.0, 0.0],       
-      total: 621.9,   avg: 88.84,  peak: 177.3,  rate: 8.5, 
-      appliances: [['PCs', 337.5], ['ACs', 180.0], ['AC', 54.0], ['Fans', 18.0], ['Tube lights', 9.0], ['Smart board', 9.0], ['Sockets', 9.0], ['Smartboard', 5.4]] 
+    'AB1':   {
+      label: 'Academic Blk 1',
+      icon: 'fa-building-columns',
+      daily: [177.3, 45.0, 177.3, 45.0, 177.3, 0.0, 0.0],
+      total: 621.9, avg: 88.84, peak: 177.3, rate: 8.5,
+      appliances: [['PCs', 337.5], ['ACs', 180.0], ['AC', 54.0], ['Fans', 18.0], ['Tube lights', 9.0], ['Smart board', 9.0], ['Sockets', 9.0], ['Smartboard', 5.4]]
     },
-    'AB2':   { 
-      label: 'Academic Blk 2',  
-      icon: 'fa-building',         
-      daily: [396.0, 23.4, 396.0, 23.4, 396.0, 0.0, 0.0],       
-      total: 1234.8,  avg: 176.4,  peak: 396.0,  rate: 8.5, 
-      appliances: [['PCs', 675.0], ['ACs', 432.0], ['AC', 90.0], ['Smartboards', 10.8], ['Smartboard', 9.0], ['Sockets', 9.0], ['Fans', 9.0]] 
+    'AB2':   {
+      label: 'Academic Blk 2',
+      icon: 'fa-building',
+      daily: [396.0, 23.4, 396.0, 23.4, 396.0, 0.0, 0.0],
+      total: 1234.8, avg: 176.4, peak: 396.0, rate: 8.5,
+      appliances: [['PCs', 675.0], ['ACs', 432.0], ['AC', 90.0], ['Smartboards', 10.8], ['Smartboard', 9.0], ['Sockets', 9.0], ['Fans', 9.0]]
     },
-    'ADMIN': { 
-      label: 'Admin Block',     
-      icon: 'fa-landmark',         
-      daily: [322.47, 91.62, 322.47, 91.62, 322.47, 0.0, 0.0],  
-      total: 1150.65, avg: 164.38, peak: 322.47, rate: 8.5, 
-      appliances: [['ACs', 828.0], ['AC', 180.0], ['PCs', 45.0], ['PC', 45.0], ['Sockets', 21.6], ['Smartboards', 10.8], ['Projector', 8.1], ['Fan', 4.5], ['LED TV', 3.6], ['Projector Screen', 2.7], ['Mic Stand', 1.35]] 
+    'ADMIN': {
+      label: 'Admin Block',
+      icon: 'fa-landmark',
+      daily: [322.47, 91.62, 322.47, 91.62, 322.47, 0.0, 0.0],
+      total: 1150.65, avg: 164.38, peak: 322.47, rate: 8.5,
+      appliances: [['ACs', 828.0], ['AC', 180.0], ['PCs', 45.0], ['PC', 45.0], ['Sockets', 21.6], ['Smartboards', 10.8], ['Projector', 8.1], ['Fan', 4.5], ['LED TV', 3.6], ['Projector Screen', 2.7], ['Mic Stand', 1.35]]
     }
   }
 };
