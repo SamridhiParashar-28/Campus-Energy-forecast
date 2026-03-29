@@ -1,11 +1,11 @@
-Campus Energy Forecast  
+# WattWise – Campus Energy Intelligence Dashboard
 Local Setup & Usage Instructions
 
-This project contains a retro terminal-style login/register system with a Node.js + Express backend and MySQL database.
+This project is a modern full-stack energy monitoring platform with a cyberpunk-themed interface, built using Node.js + Express backend and vanilla JavaScript frontend.
 
 Important – Two Parts to Run
 1. Frontend (HTML/CSS/JS) – the pages you see in the browser
-2. Backend (server.js) – handles login/register and stores users in MySQL
+2. Backend (server.js) – handles authentication, data processing, and AI features
 
 Both must be running at the same time.
 
@@ -13,83 +13,75 @@ Prerequisites
 • GitHub Codespaces (recommended) or local VS Code
 • Node.js installed (version 18 or higher) – download from: https://nodejs.org
 • npm (comes with Node.js)
-• MySQL / MariaDB installed and running 
-  (in GitHub Codespaces: already installed as MariaDB)
 • VS Code extension: Live Server (by Ritwick Dey) – highly recommended
 
 Step 1: Start the Backend (server.js)
-The backend must run first – it listens on port 3000 and connects to MySQL.
+The backend must run first – it listens on port 3000.
 
 1. Open terminal in Codespaces (bottom panel or press Ctrl + ` )
-2. Go to the root folder (where server.js is located):
+2. Go to the backend folder:
 
-   cd /workspaces/Campus-Energy-forecast
+   cd backend
 
 3. Install dependencies (only needed once):
 
    npm install
 
-   This installs: express, mysql2, bcryptjs, cors, body-parser
+   This installs: express, bcryptjs, cors, jsonwebtoken, dotenv, etc.
 
 4. Start the server:
 
    node server.js
 
    You should see:
-
-   MySQL connected successfully!
-   Backend running → http://localhost:3000
+   Server running on port 3000
+   Backend ready → http://localhost:3000
 
    → Keep this terminal open – do not close it.
 
 Step 2: Start the Frontend (pages in browser)
 
-1. In VS Code Explorer sidebar → navigate inside the Login_page folder  
-   (you should see index.html, register.html, css/, js/, etc.)
-
-2. Right-click index.html → select Open with Live Server
+1. In VS Code Explorer sidebar → navigate to the project root.
+2. Go inside the `public/` folder (or `welcome-page/` folder) where your login/register pages are located.
+3. Right-click on `index.html` → select **Open with Live Server**
 
    → Browser opens at something like:
 
-   http://127.0.0.1:5500/Login_page/index.html
+   http://127.0.0.1:5500/public/index.html
 
    or (in Codespaces):
 
-   https://your-codespace-name-5500.app.github.dev/Login_page/index.html
+   https://your-codespace-name-5500.app.github.dev/public/index.html
 
-3. You should now see the styled login page  
-   (green text on black background, scan lines, green SIGN IN button, etc.)
+4. You should now see the styled login page with the cyberpunk theme (neon accents, dark background, futuristic fonts).
 
-Step 3: How to Test – What Username & Password to Use
+Step 3: How to Test
+
 There are no default users – you must register first.
 
-Register a new user (recommended)
-
-1. On the login page → click "Sign up" at the bottom
-
+Register a new user:
+1. On the login page → click "Sign up" / Register link
 2. Fill in:
-   • Username: choose anything (example: samridhi, testuser, energyfan123)
-   • Password: at least 6 characters (example: test123, mypassword2025)
+   • Username: choose anything (example: adminuser, teststudent, energyadmin)
+   • Password: at least 6 characters
    • Confirm Password: same as above
-
 3. Click REGISTER
+4. You should see a success message and be redirected back to the login page.
 
-4. You should see a green message:  
-   "ACCOUNT CREATED SUCCESSFULLY! REDIRECTING..."
-
-5. After ~2 seconds → automatically redirected back to the login page
-
-Log in
-
-1. Use the exact credentials you just registered:
-   • Username: samridhi (or whatever you chose)
-   • Password: test123 (or whatever you chose)
-
-2. Click SIGN IN
-
+Log in:
+1. Use the exact credentials you just registered.
+2. Click SIGN IN / LOGIN
 3. Expected result:
-   • Alert/message: "LOGIN SUCCESSFUL"
-   • Redirect to dashboard.html (welcome screen)
+   • Successful login message
+   • Redirect to the main dashboard (dashboard.html)
+
+After login, explore:
+- Block-wise energy monitoring (GH, BH, AB1, AB2, ADM)
+- AI Energy Assistant
+- Forecasting dashboard
+- Anomaly alerts
+- CSV data upload (Admin only)
+- Light/Dark mode toggle
 
 Happy testing!
 

@@ -68,7 +68,24 @@ Built as a FossHack project with clean, expert-level, production-ready code qual
         ├── dataset.csv
         ├── .gitignore
         |──Local Setup & Usage Instructions
-        │
+        |──documentation/
+        |  |──documentation.md
+        |  |──planing-notes-img/
+        |       |──coloumns in the dataset.jpg
+        |       ├── dashboard main plan .jpg
+        |       ├── discussion(25-3-26).jpg
+        |       ├── explained work flow of the dashboard.jpg
+        |       ├── main dahsboard final plan.jpeg
+        |       ├── priority list till(26-3-26).jpg
+        |       ├── priority list till(29-3-26).jpg
+        |       ├── sampel dataset plan 1.jpg
+        |       ├── sampel dataset plan 2.jpg
+        |       ├── sampel dataset plan 3.jpg
+        |       ├── sampel dataset plan 4.jpg
+        |       ├── summmery till(20-3-26).jpg
+        |       ├── summmery till(20-3-26)2.jpg
+        |       ├── summmery till(20-3-26)3.jpg
+        |       └── work flow prototype 1.jpg
         ├── backend/                          
         │   ├── data/
         │   │   └── users.json
@@ -136,5 +153,5 @@ Built as a FossHack project with clean, expert-level, production-ready code qual
     Kunal Bhatia – Data Handling & css Devolopment
 
 Current Status:
-    First 5 core functions completed with clean, expert, and authentic code quality. The project is well-structured, secure, and ready for further enhancements (real Python ML integration, database migration, or deployment).
+      First 5 core functions completed with clean, expert, and authentic code quality. The project is well-structured, secure, and ready for further enhancements (real Python ML integration, database migration, or deployment).
     Made with ❤️ for sustainable campus energy management.
