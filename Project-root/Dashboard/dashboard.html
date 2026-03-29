@@ -225,16 +225,30 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('dateStr').textContent  = new Date().toLocaleDateString('en-IN', {dateStyle:'medium'});
     document.getElementById('lastRun').textContent  = new Date().toLocaleTimeString('en-IN', {timeStyle:'short'});
 
-    lineChart('mainChart', WW.dates, [
-      dataset('Girls Hostel', WW.blocks['G-H'].daily,   'G-H'),
-      dataset('Boys Hostel',  WW.blocks['B-H'].daily,   'B-H'),
-      dataset('Academic 1',   WW.blocks['AB1'].daily,   'AB1'),
-      dataset('Academic 2',   WW.blocks['AB2'].daily,   'AB2'),
-      dataset('Admin',        WW.blocks['ADMIN'].daily, 'ADMIN')
-    ]);
+    let mainChartInstance = null;
 
-    buildDashBilling();
-    refreshDashboardSummaries();
+    function renderDashboard() {
+      // Destroy previous chart instance if re-rendering
+      if (mainChartInstance) { mainChartInstance.destroy(); mainChartInstance = null; }
+
+      mainChartInstance = lineChart('mainChart', WW.dates, [
+        dataset('Girls Hostel', WW.blocks['G-H'].daily,   'G-H'),
+        dataset('Boys Hostel',  WW.blocks['B-H'].daily,   'B-H'),
+        dataset('Academic 1',   WW.blocks['AB1'].daily,   'AB1'),
+        dataset('Academic 2',   WW.blocks['AB2'].daily,   'AB2'),
+        dataset('Admin',        WW.blocks['ADMIN'].daily, 'ADMIN')
+      ]);
+
+      buildDashBilling();
+      refreshDashboardSummaries();
+    }
+
+    // Listen for data-ready event (fired by loadAndPopulateWW)
+    window.addEventListener('ww:ready', renderDashboard, { once: true });
+
+    // Kick off data load (will fire ww:ready when done)
+    loadAndPopulateWW();
+
   } catch (err) {
     console.error('[WattWise] Dashboard init error:', err);
   }

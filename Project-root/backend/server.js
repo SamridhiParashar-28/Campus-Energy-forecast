@@ -285,6 +285,79 @@ app.delete('/datasets/:id/entries', verifyToken, (req, res) => {
   }
 });
 
+// ── GET /datasets/:id/members — List all members with roles ──
+app.get('/datasets/:id/members', verifyToken, (req, res) => {
+  try {
+    const datasetId = Number(req.params.id);
+    const userId    = Number(req.user.id);
+
+    // Must be a member to view
+    const roleCheck = db.prepare('SELECT role FROM dataset_roles WHERE dataset_id = ? AND user_id = ?').get(datasetId, userId);
+    if (!roleCheck) return res.status(403).json({ success: false, message: 'Access denied.' });
+
+    const members = db.prepare(`
+      SELECT u.id, u.username, r.role
+      FROM dataset_roles r
+      JOIN users u ON r.user_id = u.id
+      WHERE r.dataset_id = ?
+      ORDER BY r.role DESC, u.username ASC
+    `).all(datasetId);
+
+    return res.json({ success: true, members, myRole: roleCheck.role });
+  } catch (err) {
+    console.error('[members get]', err);
+    res.status(500).json({ success: false, message: 'Server error.' });
+  }
+});
+
+// ── POST /datasets/:id/members/role — Change a member's role (Admin only) ──
+app.post('/datasets/:id/members/role', verifyToken, (req, res) => {
+  try {
+    const datasetId  = Number(req.params.id);
+    const callerId   = Number(req.user.id);
+    const { userId, role } = req.body;
+
+    if (!userId || !role) return res.status(400).json({ success: false, message: 'userId and role required.' });
+    if (!['admin', 'editor', 'viewer'].includes(role)) return res.status(400).json({ success: false, message: 'Invalid role.' });
+
+    // Caller must be admin
+    const callerRole = db.prepare('SELECT role FROM dataset_roles WHERE dataset_id = ? AND user_id = ?').get(datasetId, callerId);
+    if (!callerRole || callerRole.role !== 'admin') return res.status(403).json({ success: false, message: 'Admin access required.' });
+
+    // Cannot change own role
+    if (Number(userId) === callerId) return res.status(400).json({ success: false, message: 'You cannot change your own role.' });
+
+    const target = db.prepare('SELECT id FROM dataset_roles WHERE dataset_id = ? AND user_id = ?').get(datasetId, Number(userId));
+    if (!target) return res.status(404).json({ success: false, message: 'Member not found.' });
+
+    db.prepare('UPDATE dataset_roles SET role = ? WHERE dataset_id = ? AND user_id = ?').run(role, datasetId, Number(userId));
+    return res.json({ success: true, message: `Role updated to ${role}.` });
+  } catch (err) {
+    console.error('[members role]', err);
+    res.status(500).json({ success: false, message: 'Server error.' });
+  }
+});
+
+// ── DELETE /datasets/:id/members/:userId — Remove a member (Admin only) ──
+app.delete('/datasets/:id/members/:userId', verifyToken, (req, res) => {
+  try {
+    const datasetId  = Number(req.params.id);
+    const callerId   = Number(req.user.id);
+    const targetId   = Number(req.params.userId);
+
+    const callerRole = db.prepare('SELECT role FROM dataset_roles WHERE dataset_id = ? AND user_id = ?').get(datasetId, callerId);
+    if (!callerRole || callerRole.role !== 'admin') return res.status(403).json({ success: false, message: 'Admin access required.' });
+
+    if (targetId === callerId) return res.status(400).json({ success: false, message: 'You cannot remove yourself.' });
+
+    db.prepare('DELETE FROM dataset_roles WHERE dataset_id = ? AND user_id = ?').run(datasetId, targetId);
+    return res.json({ success: true, message: 'Member removed.' });
+  } catch (err) {
+    console.error('[members delete]', err);
+    res.status(500).json({ success: false, message: 'Server error.' });
+  }
+});
+
 // ── POST /ai/chat — Gemini proxy ──────────────────────────
 app.post('/ai/chat', verifyToken, async (req, res) => {
   try {

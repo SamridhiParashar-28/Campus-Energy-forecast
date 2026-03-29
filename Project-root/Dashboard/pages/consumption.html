@@ -33,7 +33,6 @@
     <a class="nav-item" data-page="anomalies"><i class="fas fa-triangle-exclamation"></i> Anomalies</a>
 
     <div class="nav-section-label">Data</div>
-    <a class="nav-item" data-page="upload"><i class="fas fa-upload"></i> Upload Data</a>
     <a class="nav-item" data-page="export"><i class="fas fa-file-export"></i> Export Report</a>
 
     <div class="nav-section-label">Blocks</div>
@@ -94,74 +93,84 @@ document.addEventListener('DOMContentLoaded', () => {
   initSidebar('consumption');
 
   const blocks = ['G-H', 'B-H', 'AB1', 'AB2', 'ADMIN'];
+  let trendChartInst = null;
+  let stackChartInst = null;
 
-  // Line Chart - Clean lines only + Consistent colors
-  lineChart('trendChart', WW.dates, blocks.map(b => 
-    dataset(WW.blocks[b].label, WW.blocks[b].daily, b)
-  ));
+  function renderConsumption() {
+    if (trendChartInst) { trendChartInst.destroy(); trendChartInst = null; }
+    if (stackChartInst) { stackChartInst.destroy(); stackChartInst = null; }
 
-  // Stacked Bar Chart
-  const stackCtx = document.getElementById('stackChart').getContext('2d');
-  new Chart(stackCtx, {
-    type: 'bar',
-    data: {
-      labels: WW.dates,
-      datasets: blocks.map(b => ({
-        label: WW.blocks[b].label,
-        data: WW.blocks[b].daily,
-        backgroundColor: getBlockColor(b),
-        borderColor: getBlockColor(b),
-        borderWidth: 1,
-        borderSkipped: false
-      }))
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      interaction: { mode: 'index', intersect: false },
-      scales: {
-        x: {
-          stacked: true,
-          ticks: { color: '#007a1f', font: { family: "'Share Tech Mono'", size: 10 } },
-          grid: { display: false }
-        },
-        y: {
-          stacked: true,
-          beginAtZero: true,
-          ticks: { color: '#007a1f', font: { family: "'Share Tech Mono'", size: 10 } },
-          grid: { color: 'rgba(0,255,65,0.06)' }
-        }
+    // Line Chart - Clean lines only + Consistent colors
+    trendChartInst = lineChart('trendChart', WW.dates, blocks.map(b =>
+      dataset(WW.blocks[b].label, WW.blocks[b].daily, b)
+    ));
+
+    // Stacked Bar Chart
+    const stackCtx = document.getElementById('stackChart').getContext('2d');
+    stackChartInst = new Chart(stackCtx, {
+      type: 'bar',
+      data: {
+        labels: WW.dates,
+        datasets: blocks.map(b => ({
+          label: WW.blocks[b].label,
+          data: WW.blocks[b].daily,
+          backgroundColor: getBlockColor(b),
+          borderColor: getBlockColor(b),
+          borderWidth: 1,
+          borderSkipped: false
+        }))
       },
-      plugins: {
-        legend: {
-          labels: { 
-            color: '#00cc33', 
-            font: { family: "'Share Tech Mono'", size: 11 },
-            boxWidth: 12 
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        scales: {
+          x: {
+            stacked: true,
+            ticks: { color: '#007a1f', font: { family: "'Share Tech Mono'", size: 10 } },
+            grid: { display: false }
+          },
+          y: {
+            stacked: true,
+            beginAtZero: true,
+            ticks: { color: '#007a1f', font: { family: "'Share Tech Mono'", size: 10 } },
+            grid: { color: 'rgba(0,255,65,0.06)' }
           }
         },
-        tooltip: {
-          backgroundColor: '#010d01',
-          borderColor: '#00551a',
-          borderWidth: 1,
-          titleColor: '#00ff41',
-          bodyColor: '#00cc33'
+        plugins: {
+          legend: {
+            labels: {
+              color: '#00cc33',
+              font: { family: "'Share Tech Mono'", size: 11 },
+              boxWidth: 12
+            }
+          },
+          tooltip: {
+            backgroundColor: '#010d01',
+            borderColor: '#00551a',
+            borderWidth: 1,
+            titleColor: '#00ff41',
+            bodyColor: '#00cc33'
+          }
         }
       }
-    }
-  });
+    });
 
-  // Weekly Stats Table
-  document.getElementById('statsTable').innerHTML = blocks.map(b => {
-    const block = WW.blocks[b];
-    return `
-      <tr>
-        <td style="color:var(--accent); font-weight:bold">${block.label}</td>
-        ${block.daily.map(val => `<td>${val}</td>`).join('')}
-        <td style="color:var(--accent); font-weight:bold">${block.total}</td>
-      </tr>`;
-  }).join('');
+    // Weekly Stats Table
+    document.getElementById('statsTable').innerHTML = blocks.map(b => {
+      const block = WW.blocks[b];
+      return `
+        <tr>
+          <td style="color:var(--accent); font-weight:bold">${block.label}</td>
+          ${block.daily.map(val => `<td>${val}</td>`).join('')}
+          <td style="color:var(--accent); font-weight:bold">${block.total}</td>
+        </tr>`;
+    }).join('');
+  }
+
+  window.addEventListener('ww:ready', renderConsumption, { once: true });
+  loadAndPopulateWW();
 });
 </script>
 </body>
-</html>
+</html>

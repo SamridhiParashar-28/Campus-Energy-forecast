@@ -98,16 +98,97 @@ const WW_SAMPLE_DATA = {
   }
 };
 
-const WW = {
-  dates: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-  blocks: {
-    'G-H':   { label: 'Girls Hostel', icon: 'fa-venus', daily: [0,0,0,0,0,0,0], total: 0, avg: 0, peak: 0, rate: 8.5, appliances: [] },
-    'B-H':   { label: 'Boys Hostel',  icon: 'fa-mars',  daily: [0,0,0,0,0,0,0], total: 0, avg: 0, peak: 0, rate: 8.5, appliances: [] },
-    'AB1':   { label: 'Academic 1',   icon: 'fa-building-columns', daily: [0,0,0,0,0,0,0], total: 0, avg: 0, peak: 0, rate: 8.5, appliances: [] },
-    'AB2':   { label: 'Academic 2',   icon: 'fa-building', daily: [0,0,0,0,0,0,0], total: 0, avg: 0, peak: 0, rate: 8.5, appliances: [] },
-    'ADMIN': { label: 'Admin Block',  icon: 'fa-landmark', daily: [0,0,0,0,0,0,0], total: 0, avg: 0, peak: 0, rate: 8.5, appliances: [] }
+// WW is the live data object used by all pages.
+// It defaults to WW_SAMPLE_DATA so charts always show real values on first load.
+function _deepCopyWWSample() {
+  return {
+    dates: [...WW_SAMPLE_DATA.dates],
+    blocks: Object.fromEntries(
+      Object.entries(WW_SAMPLE_DATA.blocks).map(([k, b]) => [k, {
+        label: b.label, icon: b.icon,
+        daily: [...b.daily],
+        total: b.total, avg: b.avg, peak: b.peak,
+        rate: b.rate,
+        appliances: b.appliances.map(a => [...a])
+      }])
+    )
+  };
+}
+const WW = _deepCopyWWSample();
+
+const API_BASE_SHARED = 'http://127.0.0.1:5000';
+
+/**
+ * Fetches decrypted entries for the active dataset from the backend
+ * and merges the aggregated block data into WW.
+ * Falls back gracefully to the WW_SAMPLE_DATA defaults if no dataset
+ * is active or the network is unavailable.
+ * Dispatches  'ww:ready'  on window when done (regardless of outcome).
+ */
+async function loadAndPopulateWW() {
+  const activeId  = localStorage.getItem('activeDatasetId');
+  const localKey  = activeId ? localStorage.getItem(`ds_key_${activeId}`) : null;
+  const token     = localStorage.getItem('token');
+
+  if (!activeId || !localKey || !token) {
+    // No active dataset – keep WW_SAMPLE_DATA defaults, signal ready
+    window.dispatchEvent(new CustomEvent('ww:ready', { detail: { source: 'sample' } }));
+    return;
   }
-};
+
+  try {
+    const res = await fetch(
+      `${API_BASE_SHARED}/datasets/${activeId}/entries`,
+      { headers: { 'Authorization': `Bearer ${token}`, 'X-Encryption-Key': localKey } }
+    );
+
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+
+    if (!data.success || !Array.isArray(data.entries) || data.entries.length === 0) {
+      // Dataset exists but has no entries yet – stay on sample data
+      window.dispatchEvent(new CustomEvent('ww:ready', { detail: { source: 'sample' } }));
+      return;
+    }
+
+    // Merge all entries: each entry.content is an array of { blockKey, label, usage } objects
+    // (as seeded by seedActiveDataset or processFile).
+    // We accumulate totals then compute avg and peak from them.
+    const acc = {}; // blockKey -> { label, totalSum, count }
+    data.entries.forEach(entry => {
+      const items = Array.isArray(entry.content) ? entry.content : [entry.content];
+      items.forEach(item => {
+        const key = item.blockKey || item.label || 'UNKNOWN';
+        if (!acc[key]) acc[key] = { label: item.label || key, totalSum: 0, count: 0 };
+        acc[key].totalSum += Number(item.usage || item.avg || 0);
+        acc[key].count++;
+      });
+    });
+
+    // Update WW blocks that we got data for; leave others on sample values
+    let gotAnyData = false;
+    Object.entries(acc).forEach(([key, val]) => {
+      if (WW.blocks[key]) {
+        const newAvg   = val.count > 0 ? +(val.totalSum / val.count).toFixed(2) : WW.blocks[key].avg;
+        const newTotal = +(val.totalSum).toFixed(2);
+        WW.blocks[key].avg   = newAvg;
+        WW.blocks[key].total = newTotal;
+        WW.blocks[key].peak  = newAvg; // single-entry datasets don't carry daily breakdown
+        gotAnyData = true;
+      }
+    });
+
+    window.dispatchEvent(new CustomEvent('ww:ready', {
+      detail: { source: gotAnyData ? 'backend' : 'sample' }
+    }));
+  } catch (err) {
+    console.warn('[WattWise] loadAndPopulateWW failed, using sample data:', err.message);
+    window.dispatchEvent(new CustomEvent('ww:ready', { detail: { source: 'sample' } }));
+  }
+}
+
+// Expose globally
+window.loadAndPopulateWW = loadAndPopulateWW;
 
 const BLOCK_COLORS = {
   'G-H':   '#b026ff',
@@ -132,7 +213,9 @@ function getDashboardRoot() {
 
 function getPublicLogin() {
   const root = getDashboardRoot();
-  return root + '../../public/index.html';
+  // getDashboardRoot() returns e.g. /Project-root/Dashboard/
+  // public/ lives at /Project-root/public/ → only ONE level up needed
+  return root + '../public/index.html';
 }
 
 function authGuard() {

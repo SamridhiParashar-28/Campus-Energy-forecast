@@ -130,7 +130,6 @@
     <a class="nav-item" data-page="anomalies"><i class="fas fa-triangle-exclamation"></i> Anomalies</a>
 
     <div class="nav-section-label">Data</div>
-    <a class="nav-item" data-page="upload"><i class="fas fa-upload"></i> Upload Data</a>
     <a class="nav-item" data-page="export"><i class="fas fa-file-export"></i> Export Report</a>
 
     <div class="nav-section-label">Blocks</div>
@@ -224,20 +223,28 @@ document.addEventListener('DOMContentLoaded', () => {
   try {
     initSidebar('billing');
 
-    // Calculate costs
-    BLOCKS.forEach(b => {
-      costs[b] = +(WW.blocks[b].total * RATE).toFixed(2);
-      grandTotal += costs[b];
-    });
+    function renderBilling() {
+      // Reset grand total on each render
+      grandTotal = 0;
 
-    document.getElementById('campusTotalCost').textContent = 
-      '₹' + grandTotal.toLocaleString('en-IN', { maximumFractionDigits: 0 });
+      // Calculate costs
+      BLOCKS.forEach(b => {
+        costs[b] = +(WW.blocks[b].total * RATE).toFixed(2);
+        grandTotal += costs[b];
+      });
 
-    buildBlockCards();
-    buildTable();
-    buildPie();
-    buildAppBars();
-    loadAllBudgets();
+      document.getElementById('campusTotalCost').textContent =
+        '₹' + grandTotal.toLocaleString('en-IN', { maximumFractionDigits: 0 });
+
+      buildBlockCards();
+      buildTable();
+      buildPie();
+      buildAppBars();
+      loadAllBudgets();
+    }
+
+    window.addEventListener('ww:ready', renderBilling, { once: true });
+    loadAndPopulateWW();
 
   } catch (err) {
     console.error('[WattWise] Billing init error:', err);
