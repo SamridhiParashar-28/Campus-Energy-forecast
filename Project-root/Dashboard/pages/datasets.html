@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
@@ -231,10 +231,10 @@
 <div class="modal" id="joinModal">
   <div class="modal-content">
     <h3 style="color:var(--accent);margin-bottom:1.5rem">Join Dataset</h3>
-    <p style="font-size:0.75rem;color:var(--text3);margin-bottom:1rem">Paste the Passkey provided by the dataset Admin. It contains your 15-minute OTP and the local decryption key.</p>
+    <p style="font-size:0.75rem;color:var(--text3);margin-bottom:1rem">Enter the 10-character passkey provided by the dataset Admin. It expires in 15 minutes.</p>
     <div class="form-group">
-      <label>Full Passkey (OTP#KEY)</label>
-      <input type="text" id="joinPasskey" placeholder="A1B2C3#base64string..."/>
+      <label>Passkey (10-character code)</label>
+      <input type="text" id="joinPasskey" placeholder="e.g. A3F9B2C0D1" maxlength="10" style="letter-spacing:2px;text-transform:uppercase"/>
     </div>
     <div class="actions" style="justify-content: flex-end">
       <button class="btn" onclick="closeModals()">Cancel</button>
@@ -244,10 +244,11 @@
 </div>
 
 <!-- Share Dataset Modal -->
-<div class="modal" id="shareModal">
-  <div class="modal-content" style="position:relative">
+<!-- Backdrop: click on backdrop does nothing (no close on backdrop click for passkey safety) -->
+<div id="shareModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:1000; align-items:center; justify-content:center;" onclick="event.stopPropagation()">
+  <div class="modal-content" style="position:relative" onclick="event.stopPropagation()">
     <!-- X button always in top right -->
-    <button onclick="closeShareModal()" style="
+    <button id="shareCloseBtn" onclick="closeShareModal()" style="
       position:absolute; top:12px; right:12px;
       background:transparent; border:1px solid var(--border);
       color:var(--text3); width:28px; height:28px;
@@ -261,12 +262,12 @@
 
     <h3 style="color:var(--accent);margin-bottom:1rem;padding-right:2rem">Share Dataset</h3>
     <p style="font-size:0.75rem;color:var(--warn);margin-bottom:1rem">
-      <i class="fas fa-exclamation-triangle"></i> This passkey contains the <strong>Zero-Knowledge Decryption Key</strong>.
-      The backend cannot recover it. The OTP portion expires in exactly 15 minutes.
+      <i class="fas fa-exclamation-triangle"></i> Share this <strong>10-character passkey</strong> with your collaborator.
+      It expires in <strong>15 minutes</strong> and can only be used once.
     </p>
     <div class="passkey-box" id="sharePasskeyDisplay">Generating...</div>
     <p style="font-size:0.7rem;color:var(--text3);margin-top:0.75rem">
-      <i class="fas fa-lock"></i> Modal closes automatically once you copy the passkey.
+      <i class="fas fa-lock"></i> Share this code with your collaborator. Click <strong style="color:var(--accent2)">✕</strong> to close when done.
     </p>
     <div class="actions" style="justify-content: flex-end; margin-top: 1rem;">
       <button class="btn btn-primary" id="shareCopyBtn" onclick="copyPasskey()">
@@ -285,18 +286,14 @@
     initSidebar('datasets');
     loadDatasets();
 
-    // Block backdrop clicks and Escape on the share modal
-    const shareModal = document.getElementById('shareModal');
-    shareModal.addEventListener('click', e => {
-      // Only close if clicking the dark backdrop (not the modal-content)
-      if (e.target === shareModal) e.stopImmediatePropagation();
-    });
+    // Block ALL keys when the share modal is open (prevents any keyboard shortcut
+    // from inadvertently dismissing the modal containing the sensitive decryption key)
     document.addEventListener('keydown', e => {
-      if (e.key === 'Escape' && shareModal.classList.contains('show')) {
+      if (document.getElementById('shareModal').style.display === 'flex') {
         e.preventDefault();
         e.stopImmediatePropagation();
       }
-    }, true); // capture phase to intercept before anything else
+    }, true);
   });
 
   async function loadDatasets() {
@@ -350,9 +347,18 @@
     if (d) {
       localStorage.setItem('activeDatasetId', id);
       localStorage.setItem('activeDatasetName', d.name);
+      // Bug Fix #7: persist the user's role so the sidebar always shows the correct role
+      localStorage.setItem('activeDatasetRole', d.role || 'viewer');
       renderDatasets();
       // Ensure shared.js can pick up the change if we add a refresh function
       if (typeof updateActiveDatasetDisplay === 'function') updateActiveDatasetDisplay();
+      // Refresh sidebar role display immediately
+      const sidebarRole = document.getElementById('sidebarRole');
+      if (sidebarRole && d.role) {
+        const roleTxt = d.role.charAt(0).toUpperCase() + d.role.slice(1);
+        sidebarRole.textContent = `Role: ${roleTxt}`;
+        sidebarRole.style.color = 'var(--accent2)';
+      }
     }
   }
 
@@ -366,7 +372,7 @@
   }
   
   function closeShareModal() {
-    document.getElementById('shareModal').classList.remove('show');
+    document.getElementById('shareModal').style.display = 'none';
     // Reset for next use
     document.getElementById('sharePasskeyDisplay').textContent = 'Generating...';
     const copyBtn = document.getElementById('shareCopyBtn');
@@ -384,12 +390,11 @@
     const copyBtn = document.getElementById('shareCopyBtn');
     try {
       await navigator.clipboard.writeText(text.trim());
-      // Show success
+      // Show success — modal stays open until user clicks X
       copyBtn.innerHTML = '<i class="fas fa-check"></i> Copied!';
       copyBtn.style.background = 'var(--accent)';
       copyBtn.style.color = 'var(--bg)';
       copyBtn.disabled = true;
-      // Modal stays open — user closes manually via the X button
     } catch (e) {
       // Fallback: select the text so user can Ctrl+C
       const range = document.createRange();
@@ -398,6 +403,15 @@
       window.getSelection().addRange(range);
       copyBtn.innerHTML = '<i class="fas fa-hand-pointer"></i> Selected! Press Ctrl+C';
     }
+  }
+
+  // Key helpers: convert between hex (used by backend) and base64 (used for display/storage)
+  function hexToB64(hex) {
+    const bytes = new Uint8Array(hex.match(/.{2}/g).map(b => parseInt(b, 16)));
+    return btoa(String.fromCharCode(...bytes));
+  }
+  function b64ToHex(b64) {
+    return Array.from(atob(b64), c => c.charCodeAt(0).toString(16).padStart(2,'0')).join('');
   }
 
   async function createDataset() {
@@ -414,8 +428,8 @@
       });
       const data = await res.json();
       if (data.success) {
-        // Securely save the new symmetric key that the backend just handed us
-        localStorage.setItem(`ds_key_${data.datasetId}`, data.key);
+        // Store key as Base64 (shorter) — convert from hex returned by backend
+        localStorage.setItem(`ds_key_${data.datasetId}`, hexToB64(data.key));
         
         closeModals();
         document.getElementById('createName').value = '';
@@ -428,22 +442,24 @@
   }
 
   async function joinDataset() {
-    const passkey = document.getElementById('joinPasskey').value.trim();
-    if (!passkey.includes('#')) return alert('Invalid passkey format. Expected OTP#KEY');
-    
-    const [otp, key] = passkey.split('#');
+    const passkey = document.getElementById('joinPasskey').value.trim().toUpperCase();
+    if (!passkey || passkey.length !== 10) return alert('Please enter the 10-character passkey.');
+
     const token = localStorage.getItem("token");
     
     try {
       const res = await fetch(`${API_BASE}/datasets/join`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ otp_code: otp })
+        body: JSON.stringify({ otp_code: passkey })
       });
       const data = await res.json();
       if (data.success) {
-        // Securely save the decryption key from the passkey
-        localStorage.setItem(`ds_key_${data.dataset_id}`, key);
+        // Key is returned directly from the backend (stored during invite creation)
+        if (data.key) {
+          localStorage.setItem(`ds_key_${data.dataset_id}`, data.key);
+        }
+        localStorage.setItem('activeDatasetRole', 'viewer');
         closeModals();
         document.getElementById('joinPasskey').value = '';
         loadDatasets();
@@ -454,7 +470,14 @@
   }
 
   async function openShareModal(datasetId) {
-    document.getElementById('shareModal').classList.add('show');
+    // Bug Fix #4: always reset the copy button BEFORE opening so a re-open shows a clean state
+    const copyBtn = document.getElementById('shareCopyBtn');
+    copyBtn.innerHTML = '<i class="fas fa-copy"></i> Copy Passkey';
+    copyBtn.style.background = '';
+    copyBtn.style.color = '';
+    copyBtn.disabled = false;
+
+    document.getElementById('shareModal').style.display = 'flex';
     const disp = document.getElementById('sharePasskeyDisplay');
     disp.textContent = 'Generating...';
 
@@ -462,27 +485,13 @@
     try {
       const res = await fetch(`${API_BASE}/datasets/${datasetId}/invite`, {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ key: localStorage.getItem(`ds_key_${datasetId}`) || null })
       });
       const data = await res.json();
       if (data.success) {
-        // Combine OTP with locally stored key
-        let localKey = localStorage.getItem(`ds_key_${datasetId}`);
-        if (!localKey) {
-          // Key missing (e.g. created before fix, or on another browser).
-          // Generate a fresh one and store it — old entries won't decrypt but new ones will.
-          localKey = Array.from(crypto.getRandomValues(new Uint8Array(32)))
-            .map(b => b.toString(16).padStart(2,'0')).join('');
-          localStorage.setItem(`ds_key_${datasetId}`, localKey);
-          disp.innerHTML = `
-            <span style="color:orange;font-size:0.75rem;display:block;margin-bottom:8px">
-              ⚠ No key was found locally — a new key has been generated and saved.<br>
-              Any previous entries for this dataset will need re-seeding.
-            </span>
-            <span style="word-break:break-all">${data.otp_code}#${localKey}</span>`;
-          return;
-        }
-        disp.textContent = `${data.otp_code}#${localKey}`;
+        // Display just the 10-char OTP — key is stored server-side for 15 min
+        disp.textContent = data.otp_code;
       } else {
         disp.innerHTML = `<span style="color:red">✗ Failed: ${data.message}</span>`;
       }
@@ -497,13 +506,17 @@
     const activeId = localStorage.getItem('activeDatasetId');
     if (!activeId) return alert('No active dataset set.');
     
-    let localKey = localStorage.getItem(`ds_key_${activeId}`);
-    if (!localKey) {
-      // Auto-recover missing key so seeding isn't blocked
-      localKey = Array.from(crypto.getRandomValues(new Uint8Array(32)))
-        .map(b => b.toString(16).padStart(2,'0')).join('');
-      localStorage.setItem(`ds_key_${activeId}`, localKey);
+    let localKeyB64 = localStorage.getItem(`ds_key_${activeId}`);
+    if (!localKeyB64) {
+      // Auto-recover missing key so seeding isn't blocked (store as Base64)
+      const raw = crypto.getRandomValues(new Uint8Array(32));
+      localKeyB64 = btoa(String.fromCharCode(...raw));
+      localStorage.setItem(`ds_key_${activeId}`, localKeyB64);
     }
+    // Convert Base64 → hex for backend (also handle legacy 64-char hex keys)
+    const localKey = localKeyB64.length === 64 && /^[0-9a-f]+$/i.test(localKeyB64)
+      ? localKeyB64
+      : b64ToHex(localKeyB64);
 
     const status = document.getElementById('seedStatus');
     status.textContent = "Uploading Data...";

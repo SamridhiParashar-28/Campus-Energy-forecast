@@ -173,10 +173,10 @@
 <div class="modal" id="joinModal">
   <div class="modal-content">
     <h3 style="color:var(--accent);margin-bottom:1.5rem">Join Dataset</h3>
-    <p style="font-size:0.75rem;color:var(--text3);margin-bottom:1rem">Paste the Passkey provided by the dataset Admin. It contains your 15-minute OTP and the local decryption key.</p>
+    <p style="font-size:0.75rem;color:var(--text3);margin-bottom:1rem">Enter the 10-character passkey provided by the dataset Admin. It expires in 15 minutes.</p>
     <div class="form-group">
-      <label>Full Passkey (OTP#KEY)</label>
-      <input type="text" id="joinPasskey" placeholder="A1B2C3#base64string..."/>
+      <label>Passkey (10-character code)</label>
+      <input type="text" id="joinPasskey" placeholder="e.g. A3F9B2C0D1" maxlength="10" style="letter-spacing:2px;text-transform:uppercase"/>
     </div>
     <div class="actions" style="justify-content: flex-end">
       <button class="btn" onclick="closeModals()">Cancel</button>
@@ -186,14 +186,19 @@
 </div>
 
 <!-- Share Dataset Modal -->
-<div class="modal" id="shareModal">
-  <div class="modal-content" style="position:relative">
-    <button onclick="closeShareModal()" style="position:absolute; top:12px; right:12px; background:transparent; border:1px solid var(--border); color:var(--text3); width:28px; height:28px; border-radius:4px; cursor:pointer; font-size:0.9rem; display:flex; align-items:center; justify-content:center; transition: all 0.2s;" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text3)'">
+<!-- Backdrop: click on backdrop does nothing (no close on backdrop click for passkey safety) -->
+<div id="shareModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:1000; align-items:center; justify-content:center;" onclick="event.stopPropagation()">
+  <div class="modal-content" style="position:relative" onclick="event.stopPropagation()">
+    <button id="shareCloseBtn" onclick="closeShareModal()" style="position:absolute; top:12px; right:12px; background:transparent; border:1px solid var(--border); color:var(--text3); width:28px; height:28px; border-radius:4px; cursor:pointer; font-size:0.9rem; display:flex; align-items:center; justify-content:center; transition: all 0.2s;" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text3)'">
       <i class="fas fa-times"></i>
     </button>
     <h3 style="color:var(--accent);margin-bottom:1rem;padding-right:2rem">Share Dataset</h3>
-    <p style="font-size:0.75rem;color:var(--warn);margin-bottom:1rem"><i class="fas fa-exclamation-triangle"></i> This passkey contains the <strong>Zero-Knowledge Decryption Key</strong>.</p>
+    <p style="font-size:0.75rem;color:var(--warn);margin-bottom:1rem">
+      <i class="fas fa-exclamation-triangle"></i> Share this <strong>10-character passkey</strong> with your collaborator.
+      It expires in <strong>15 minutes</strong> and can only be used once.
+    </p>
     <div class="passkey-box" id="sharePasskeyDisplay">Generating...</div>
+    <p style="font-size:0.7rem;color:var(--text3);margin-top:0.75rem"><i class="fas fa-lock"></i> Share this code with your collaborator. Click <strong style="color:var(--accent2)">✕</strong> to close when done.</p>
     <div class="actions" style="justify-content: flex-end; margin-top: 1rem;">
       <button class="btn btn-primary" id="shareCopyBtn" onclick="copyPasskey()"><i class="fas fa-copy"></i> Copy Passkey</button>
     </div>
@@ -240,9 +245,13 @@
       dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('over'); handleFile(e.dataTransfer.files[0]); });
     }
 
-    const shareModal = document.getElementById('shareModal');
-    shareModal.addEventListener('click', e => { if (e.target === shareModal) e.stopImmediatePropagation(); });
-    document.addEventListener('keydown', e => { if (e.key === 'Escape' && shareModal.classList.contains('show')) { e.preventDefault(); e.stopImmediatePropagation(); } }, true);
+    // Block Escape key AND any other key that could close the share modal
+    document.addEventListener('keydown', e => {
+      if (document.getElementById('shareModal').style.display === 'flex') {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+      }
+    }, true);
   });
 
   async function loadDatasets() {
@@ -306,11 +315,11 @@
     if (d) {
       localStorage.setItem('activeDatasetId', id);
       localStorage.setItem('activeDatasetName', d.name);
-      localStorage.setItem('activeDatasetRole', d.role); // Store role for sidebar
+      localStorage.setItem('activeDatasetRole', d.role);
       renderDatasets();
       if (typeof updateActiveDatasetDisplay === 'function') updateActiveDatasetDisplay();
-      if (typeof initSidebar === 'function') initSidebar('dataset_manager'); // Refresh sidebar role
-      setTimeout(() => navigate('lstm_dashboard'), 800);
+      if (typeof initSidebar === 'function') initSidebar('dataset_manager');
+      // NOTE: Do NOT auto-navigate away — it would close any open modal unexpectedly.
     }
   }
 
@@ -340,12 +349,39 @@
   function openCreateModal() { document.getElementById('createModal').classList.add('show'); }
   function openJoinModal() { document.getElementById('joinModal').classList.add('show'); }
   function closeModals() { document.querySelectorAll('.modal:not(#shareModal)').forEach(m => m.classList.remove('show')); }
-  function closeShareModal() { document.getElementById('shareModal').classList.remove('show'); }
+  function closeShareModal() {
+    const m = document.getElementById('shareModal');
+    m.style.display = 'none';
+    // Reset state for next use
+    document.getElementById('sharePasskeyDisplay').textContent = 'Generating...';
+    const copyBtn = document.getElementById('shareCopyBtn');
+    copyBtn.innerHTML = '<i class="fas fa-copy"></i> Copy Passkey';
+    copyBtn.style.background = '';
+    copyBtn.style.color = '';
+    copyBtn.disabled = false;
+  }
   async function copyPasskey() {
     const disp = document.getElementById('sharePasskeyDisplay');
     const text = disp.textContent || disp.innerText;
     if (!text || text.trim() === 'Generating...') return;
-    try { await navigator.clipboard.writeText(text.trim()); document.getElementById('shareCopyBtn').innerHTML = '<i class="fas fa-check"></i> Copied!'; } catch(e) {}
+    const copyBtn = document.getElementById('shareCopyBtn');
+    try {
+      await navigator.clipboard.writeText(text.trim());
+      copyBtn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+      copyBtn.style.background = 'var(--accent)';
+      copyBtn.style.color = 'var(--bg)';
+      copyBtn.disabled = true;
+      // Modal stays open — user closes via the X button
+    } catch(e) {}
+  }
+
+  // Key helpers: convert between hex (used by backend) and base64 (used for display/storage)
+  function hexToB64(hex) {
+    const bytes = new Uint8Array(hex.match(/.{2}/g).map(b => parseInt(b, 16)));
+    return btoa(String.fromCharCode(...bytes));
+  }
+  function b64ToHex(b64) {
+    return Array.from(atob(b64), c => c.charCodeAt(0).toString(16).padStart(2,'0')).join('');
   }
 
   async function createDataset() {
@@ -356,42 +392,75 @@
     try {
       const res = await fetch(`${API_BASE}/datasets`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ name, description: desc }) });
       const data = await res.json();
-      if (data.success) { localStorage.setItem(`ds_key_${data.datasetId}`, data.key); closeModals(); loadDatasets(); }
+      // Store key as Base64 (shorter) — convert from hex returned by backend
+      if (data.success) { localStorage.setItem(`ds_key_${data.datasetId}`, hexToB64(data.key)); closeModals(); loadDatasets(); }
     } catch(e) {}
   }
 
   async function joinDataset() {
-    const passkey = document.getElementById('joinPasskey').value.trim();
-    if (!passkey.includes('#')) return alert('Invalid passkey');
-    const [otp, key] = passkey.split('#');
+    const passkey = document.getElementById('joinPasskey').value.trim().toUpperCase();
+    if (!passkey || passkey.length !== 10) return alert('Please enter the 10-character passkey.');
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch(`${API_BASE}/datasets/join`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ otp_code: otp }) });
+      const res = await fetch(`${API_BASE}/datasets/join`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ otp_code: passkey }) });
       const data = await res.json();
-      if (data.success) { localStorage.setItem(`ds_key_${data.dataset_id}`, key); closeModals(); loadDatasets(); }
+      if (data.success) {
+        if (data.key) { localStorage.setItem(`ds_key_${data.dataset_id}`, data.key); }
+        closeModals();
+        loadDatasets();
+      } else { alert('Join failed: ' + data.message); }
     } catch(e) {}
   }
 
   async function openShareModal(datasetId) {
-    document.getElementById('shareModal').classList.add('show');
+    // Always reset UI state before opening (clean slate for each share)
+    const copyBtn = document.getElementById('shareCopyBtn');
+    if (copyBtn) {
+      copyBtn.innerHTML = '<i class="fas fa-copy"></i> Copy Passkey';
+      copyBtn.style.background = '';
+      copyBtn.style.color = '';
+      copyBtn.disabled = false;
+    }
+
+    const m = document.getElementById('shareModal');
+    m.style.display = 'flex';
     const disp = document.getElementById('sharePasskeyDisplay');
     disp.textContent = 'Generating...';
+
     try {
-      const res = await fetch(`${API_BASE}/datasets/${datasetId}/invite`, { method: 'POST', headers: { 'Authorization': `Bearer ${localStorage.getItem("token")}` } });
+      const res = await fetch(`${API_BASE}/datasets/${datasetId}/invite`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+        body: JSON.stringify({ key: localStorage.getItem(`ds_key_${datasetId}`) || null })
+      });
       const data = await res.json();
       if (data.success) {
-        let localKey = localStorage.getItem(`ds_key_${datasetId}`);
-        if (!localKey) { localKey = Array.from(crypto.getRandomValues(new Uint8Array(32))).map(b => b.toString(16).padStart(2,'0')).join(''); localStorage.setItem(`ds_key_${datasetId}`, localKey); }
-        disp.textContent = `${data.otp_code}#${localKey}`;
+        // Display just the 10-char OTP — key is stored server-side for 15 min
+        disp.textContent = data.otp_code;
+      } else {
+        disp.innerHTML = `<span style="color:var(--danger)">&#x2717; Failed: ${data.message || 'Unknown error'}</span>`;
       }
-    } catch(e) {}
+    } catch(e) {
+      console.error('[shareModal]', e);
+      disp.innerHTML = '<span style="color:var(--danger)">&#x2717; Network error. Is the backend running?</span>';
+    }
   }
 
   async function seedActiveDataset() {
     const activeId = localStorage.getItem('activeDatasetId');
-    const localKey = localStorage.getItem(`ds_key_${activeId}`);
+    let localKeyB64 = localStorage.getItem(`ds_key_${activeId}`);
     const status = document.getElementById('seedStatus');
     status.textContent = "Seeding...";
+    if (!localKeyB64) {
+      // Auto-recover missing key (stored as Base64)
+      const raw = crypto.getRandomValues(new Uint8Array(32));
+      localKeyB64 = btoa(String.fromCharCode(...raw));
+      localStorage.setItem(`ds_key_${activeId}`, localKeyB64);
+    }
+    // Convert Base64 → hex for backend (also handle legacy 64-char hex keys)
+    const localKey = localKeyB64.length === 64 && /^[0-9a-f]+$/i.test(localKeyB64)
+      ? localKeyB64
+      : b64ToHex(localKeyB64);
     try {
       // Use WW_SAMPLE_DATA instead of the now-empty WW
       const entries = Object.keys(WW_SAMPLE_DATA.blocks).map(k => ({ 

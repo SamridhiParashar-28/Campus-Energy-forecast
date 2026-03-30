@@ -159,7 +159,7 @@ app.post('/datasets', verifyToken, (req, res) => {
   }
 });
 
-// POST /datasets/:id/invite -> Generate 15-min OTP
+// POST /datasets/:id/invite -> Generate 15-min OTP (key stored server-side for 15 min)
 app.post('/datasets/:id/invite', verifyToken, (req, res) => {
   try {
     const datasetId = Number(req.params.id);
@@ -167,11 +167,17 @@ app.post('/datasets/:id/invite', verifyToken, (req, res) => {
     const roleCheck = db.prepare('SELECT role FROM dataset_roles WHERE dataset_id = ? AND user_id = ?').get(datasetId, userId);
     if (!roleCheck || roleCheck.role !== 'admin') return res.status(403).json({ success: false, message: 'Admin access required.' });
 
-    const otpCode = crypto.randomBytes(3).toString('hex').toUpperCase();
+    // Accept the admin's Base64 encryption key to store temporarily
+    const encryptedKey = (req.body && req.body.key) ? String(req.body.key) : null;
+
+    // 10-char uppercase alphanumeric OTP (e.g. "A3F9B2C0D1")
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no I/O/0/1 to avoid confusion
+    const otpCode = Array.from(crypto.getRandomValues(new Uint8Array(10)))
+      .map(b => chars[b % chars.length]).join('');
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
     
-    db.prepare('INSERT INTO dataset_invites (dataset_id, otp_code, expires_at, created_by) VALUES (?, ?, ?, ?)')
-      .run(datasetId, String(otpCode), String(expiresAt), userId);
+    db.prepare('INSERT INTO dataset_invites (dataset_id, otp_code, expires_at, created_by, encrypted_key) VALUES (?, ?, ?, ?, ?)')
+      .run(datasetId, String(otpCode), String(expiresAt), userId, encryptedKey);
       
     return res.json({ success: true, otp_code: String(otpCode), expires_at: String(expiresAt) });
   } catch (err) {
@@ -180,13 +186,13 @@ app.post('/datasets/:id/invite', verifyToken, (req, res) => {
   }
 });
 
-// POST /datasets/join -> Join using OTP
+// POST /datasets/join -> Join using OTP (key returned from invite record)
 app.post('/datasets/join', verifyToken, (req, res) => {
   try {
     const { otp_code } = req.body;
     if (!otp_code) return res.status(400).json({ success: false, message: 'OTP required.' });
 
-    const invite = db.prepare('SELECT id, dataset_id, expires_at FROM dataset_invites WHERE otp_code = ?').get(String(otp_code));
+    const invite = db.prepare('SELECT id, dataset_id, expires_at, encrypted_key FROM dataset_invites WHERE otp_code = ?').get(String(otp_code));
     if (!invite) return res.status(404).json({ success: false, message: 'Invalid OTP.' });
     if (new Date(invite.expires_at) < new Date()) {
       db.prepare('DELETE FROM dataset_invites WHERE id = ?').run(invite.id);
@@ -200,7 +206,12 @@ app.post('/datasets/join', verifyToken, (req, res) => {
     });
     joinTx();
 
-    return res.json({ success: true, message: 'Joined dataset successfully.', dataset_id: invite.dataset_id });
+    return res.json({
+      success: true,
+      message: 'Joined dataset successfully.',
+      dataset_id: invite.dataset_id,
+      key: invite.encrypted_key || null   // Return the Base64 key to the joiner
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: 'Server error.' });

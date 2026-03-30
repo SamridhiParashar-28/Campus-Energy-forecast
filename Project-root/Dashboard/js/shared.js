@@ -137,9 +137,14 @@ async function loadAndPopulateWW() {
   }
 
   try {
+    // localKey is stored as Base64; convert to hex for backend (also handles legacy hex keys)
+    const hexKey = localKey.length === 64 && /^[0-9a-f]+$/i.test(localKey)
+      ? localKey
+      : Array.from(atob(localKey), c => c.charCodeAt(0).toString(16).padStart(2,'0')).join('');
+
     const res = await fetch(
       `${API_BASE_SHARED}/datasets/${activeId}/entries`,
-      { headers: { 'Authorization': `Bearer ${token}`, 'X-Encryption-Key': localKey } }
+      { headers: { 'Authorization': `Bearer ${token}`, 'X-Encryption-Key': hexKey } }
     );
 
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -263,10 +268,10 @@ function initSidebar(activeId) {
 
   // Inject Dataset Manager Link into Sidebar dynamically
   const mainLabel = Array.from(document.querySelectorAll('.nav-section-label')).find(el => el.textContent === 'Main');
-  if (mainLabel && !document.querySelector('[data-page="dataset_manager"]')) {
+  if (mainLabel && !document.querySelector('[data-page="datasets"]') && !document.querySelector('[data-page="dataset_manager"]')) {
     const link = document.createElement('a');
     link.className = 'nav-item';
-    link.setAttribute('data-page', 'dataset_manager');
+    link.setAttribute('data-page', 'datasets');
     link.innerHTML = '<i class="fas fa-database"></i> Dataset Manager';
     mainLabel.after(link);
   }
@@ -333,6 +338,7 @@ function navigate(page) {
   const map = {
     dashboard:       root + 'dashboard.html',
     dataset_manager: root + 'pages/dataset_manager.html',
+    datasets:        root + 'pages/datasets.html',       // Bug Fix #8: added datasets page route
     live:            root + 'pages/live.html',
     consumption:     root + 'pages/consumption.html',
     forecast:        root + 'pages/forecast.html',

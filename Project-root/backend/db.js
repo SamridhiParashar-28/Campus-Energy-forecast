@@ -77,6 +77,11 @@ function initDb() {
   
   // Enable foreign keys
   db.exec('PRAGMA foreign_keys = ON;');
+
+  // Migration: add encrypted_key column to dataset_invites if it doesn't exist yet
+  try {
+    db.exec('ALTER TABLE dataset_invites ADD COLUMN encrypted_key TEXT;');
+  } catch(_) { /* column already exists — safe to ignore */ }
 }
 
 initDb();
