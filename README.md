@@ -111,7 +111,8 @@ Built as a FossHack project with clean, expert-level, production-ready code qual
         │   │   ├── dashboard.js
         │   │   └── shared.js
         │   │
-        │   └── pages/                        
+        │   └──<details>
+                <summary>pages/</summary>                        
         │       ├── ai_assistant.html
         │       ├── anomalies.html
         │       ├── billing.html
@@ -127,6 +128,7 @@ Built as a FossHack project with clean, expert-level, production-ready code qual
         │       ├── lstm_dashboard.html
         │       ├── switch_user.html
         │       ├── upload.html
+                 </details>
         │   
         │
         ├── public/                          
