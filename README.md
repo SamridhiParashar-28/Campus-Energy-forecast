@@ -112,7 +112,7 @@ Built as a FossHack project with clean, expert-level, production-ready code qual
         │   │   └── shared.js
         │   │
         │   └──<details>
-                <summary>pages/</summary>                        
+                <summary> pages/ </summary>                        
         │       ├── ai_assistant.html
         │       ├── anomalies.html
         │       ├── billing.html
