@@ -1,5 +1,38 @@
 // shared.js — WattWise (Consistent Block Colors + Line-Only Charts)
 
+// ── Custom Cursor ─────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  const cursor    = document.getElementById('cursor');
+  const cursorDot = document.getElementById('cursorDot');
+  if (!cursor || !cursorDot) return;
+  let mx = 0, my = 0, cx = 0, cy = 0;
+
+  document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
+
+  function animateCursor() {
+    cx += (mx - cx) * 0.18;
+    cy += (my - cy) * 0.18;
+    cursor.style.left    = cx + 'px';
+    cursor.style.top     = cy + 'px';
+    cursorDot.style.left = mx + 'px';
+    cursorDot.style.top  = my + 'px';
+    requestAnimationFrame(animateCursor);
+  }
+  animateCursor();
+
+  document.querySelectorAll('a, button, .nav-item').forEach(el => {
+    el.addEventListener('mouseenter', () => {
+      cursor.style.opacity    = '0';
+      cursorDot.style.opacity = '0';
+    });
+    el.addEventListener('mouseleave', () => {
+      cursor.style.opacity    = '1';
+      cursorDot.style.opacity = '1';
+    });
+  });
+});
+
+
 /* ── THEME ── */
 const THEME_KEY = 'ww_theme';
 
