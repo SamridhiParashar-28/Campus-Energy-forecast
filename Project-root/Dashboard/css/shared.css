@@ -3,7 +3,7 @@ body { cursor: none; }
 
 .cursor {
   width: 12px; height: 12px;
-  border: 1.5px solid #00aa33;
+  border: 1.5px solid var(--coustom_curos);
   border-radius: 50%;
   position: fixed;
   pointer-events: none;
@@ -48,7 +48,7 @@ a, button, .nav-item, .block-btn, [onclick] {
   --danger:    #ff3355;
   --warn:      #ffaa00;
   --info:      #00ccff;
-  --couston_curor: #00aa33;
+  --coustom_curos: #00aa33;
   --sidebar-w: 240px;
   --font-main: 'Share Tech Mono', monospace;
   --font-head: 'Orbitron', monospace;
@@ -73,7 +73,7 @@ a, button, .nav-item, .block-btn, [onclick] {
   --danger:    #ff6b7a;
   --warn:      #ffb74d;
   --info:      #4fc3f7;
-  --couston_curor:  #1e6ac9;
+  --coustom_curos:  #1e6ac9;
 }
 
 [data-theme="light"] .nav-item.active {
