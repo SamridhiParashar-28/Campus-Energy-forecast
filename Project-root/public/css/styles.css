@@ -5,8 +5,30 @@
   --text:      #00ff41;
   --text-light:#00cc33;
   --accent:    #00ff41;
-  --border:    #00aa33;
+  --accent2:   #00cc33;
   --glow:      rgba(0, 255, 65, 0.35);
+  --border:    #00aa33;
+  --cursor-border: #00aa33;
+  --cursor-bg: #00ff41;
+  --success:   #00ff41;
+  --danger:    #ff3366;
+  --btn-hover: #00cc33;
+}
+
+[data-theme="light"] {
+  --bg:        #e0f0ff;
+  --card-bg:   #ffffff;
+  --text:      #0a2a4a;
+  --text-light:#2c446e;
+  --accent:    #4a9cff;
+  --accent2:   #2b7fe6;
+  --glow:      rgba(74, 156, 255, 0.22);
+  --border:    #b8d8ff;
+  --cursor-border: #1e6ac9;
+  --cursor-bg: #4a9cff;
+  --success:   #2b7fe6;
+  --danger:    #ff6b7a;
+  --btn-hover: #2b7fe6;
 }
 
 /* ── Reset ───────────────────────────────────────────────── */
@@ -34,10 +56,41 @@ body {
   background-image: repeating-linear-gradient(
     to bottom,
     transparent 0,
-    rgba(0, 255, 65, 0.04) 1px,
+    var(--glow) 1px,
     transparent 2px
   );
   background-size: 100% 4px;
+  cursor: none;
+}
+
+/* ── Custom cursor ── */
+.cursor {
+  width: 12px; height: 12px;
+  border: 1.5px solid var(--cursor-border);
+  border-radius: 50%;
+  position: fixed;
+  pointer-events: none;
+  z-index: 99999;
+  transition: transform 0.15s, opacity 0.15s, border-color 0.3s;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+.cursor-dot {
+  width: 4px; height: 4px;
+  background: var(--cursor-bg);
+  border-radius: 50%;
+  position: fixed;
+  pointer-events: none;
+  z-index: 99999;
+  transform: translate(-50%, -50%);
+}
+
+/* ── Interactive Cursors ── */
+[data-theme="dark"] a, [data-theme="dark"] button, [data-theme="dark"] input, [data-theme="dark"] label, [data-theme="dark"] .password-toggle {
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 16 16' shape-rendering='crispEdges'%3E%3Crect x='5' y='1' width='2' height='2' fill='%23000'/%3E%3Crect x='5' y='3' width='2' height='2' fill='%23000'/%3E%3Crect x='5' y='5' width='2' height='2' fill='%23000'/%3E%3Crect x='5' y='7' width='2' height='2' fill='%23000'/%3E%3Crect x='5' y='9' width='2' height='2' fill='%23000'/%3E%3Crect x='7' y='5' width='2' height='2' fill='%23000'/%3E%3Crect x='7' y='7' width='2' height='2' fill='%23000'/%3E%3Crect x='7' y='9' width='2' height='2' fill='%23000'/%3E%3Crect x='9' y='7' width='2' height='2' fill='%23000'/%3E%3Crect x='9' y='9' width='2' height='2' fill='%23000'/%3E%3Crect x='11' y='7' width='2' height='2' fill='%23000'/%3E%3Crect x='11' y='9' width='2' height='2' fill='%23000'/%3E%3Crect x='3' y='11' width='10' height='2' fill='%23000'/%3E%3Crect x='3' y='13' width='10' height='2' fill='%23000'/%3E%3Crect x='3' y='15' width='10' height='2' fill='%23000'/%3E%3Crect x='4' y='0' width='2' height='2' fill='%2300aa33'/%3E%3Crect x='4' y='2' width='2' height='2' fill='%2300aa33'/%3E%3Crect x='4' y='4' width='2' height='2' fill='%2300aa33'/%3E%3Crect x='4' y='6' width='2' height='2' fill='%2300aa33'/%3E%3Crect x='4' y='8' width='2' height='2' fill='%2300aa33'/%3E%3Crect x='6' y='4' width='2' height='2' fill='%2300aa33'/%3E%3Crect x='6' y='6' width='2' height='2' fill='%2300aa33'/%3E%3Crect x='6' y='8' width='2' height='2' fill='%2300aa33'/%3E%3Crect x='8' y='6' width='2' height='2' fill='%2300aa33'/%3E%3Crect x='8' y='8' width='2' height='2' fill='%2300aa33'/%3E%3Crect x='10' y='6' width='2' height='2' fill='%2300aa33'/%3E%3Crect x='10' y='8' width='2' height='2' fill='%2300aa33'/%3E%3Crect x='2' y='10' width='10' height='2' fill='%2300aa33'/%3E%3Crect x='2' y='12' width='10' height='2' fill='%2300aa33'/%3E%3Crect x='2' y='14' width='10' height='2' fill='%2300aa33'/%3E%3C/svg%3E") 4 0, pointer;
+}
+[data-theme="light"] a, [data-theme="light"] button, [data-theme="light"] input, [data-theme="light"] label, [data-theme="light"] .password-toggle {
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 16 16' shape-rendering='crispEdges'%3E%3Crect x='5' y='1' width='2' height='2' fill='%23fff'/%3E%3Crect x='5' y='3' width='2' height='2' fill='%23fff'/%3E%3Crect x='5' y='5' width='2' height='2' fill='%23fff'/%3E%3Crect x='5' y='7' width='2' height='2' fill='%23fff'/%3E%3Crect x='5' y='9' width='2' height='2' fill='%23fff'/%3E%3Crect x='7' y='5' width='2' height='2' fill='%23fff'/%3E%3Crect x='7' y='7' width='2' height='2' fill='%23fff'/%3E%3Crect x='7' y='9' width='2' height='2' fill='%23fff'/%3E%3Crect x='9' y='7' width='2' height='2' fill='%23fff'/%3E%3Crect x='9' y='9' width='2' height='2' fill='%23fff'/%3E%3Crect x='11' y='7' width='2' height='2' fill='%23fff'/%3E%3Crect x='11' y='9' width='2' height='2' fill='%23fff'/%3E%3Crect x='3' y='11' width='10' height='2' fill='%23fff'/%3E%3Crect x='3' y='13' width='10' height='2' fill='%23fff'/%3E%3Crect x='3' y='15' width='10' height='2' fill='%23fff'/%3E%3Crect x='4' y='0' width='2' height='2' fill='%231e6ac9'/%3E%3Crect x='4' y='2' width='2' height='2' fill='%231e6ac9'/%3E%3Crect x='4' y='4' width='2' height='2' fill='%231e6ac9'/%3E%3Crect x='4' y='6' width='2' height='2' fill='%231e6ac9'/%3E%3Crect x='4' y='8' width='2' height='2' fill='%231e6ac9'/%3E%3Crect x='6' y='4' width='2' height='2' fill='%231e6ac9'/%3E%3Crect x='6' y='6' width='2' height='2' fill='%231e6ac9'/%3E%3Crect x='6' y='8' width='2' height='2' fill='%231e6ac9'/%3E%3Crect x='8' y='6' width='2' height='2' fill='%231e6ac9'/%3E%3Crect x='8' y='8' width='2' height='2' fill='%231e6ac9'/%3E%3Crect x='10' y='6' width='2' height='2' fill='%231e6ac9'/%3E%3Crect x='10' y='8' width='2' height='2' fill='%231e6ac9'/%3E%3Crect x='2' y='10' width='10' height='2' fill='%231e6ac9'/%3E%3Crect x='2' y='12' width='10' height='2' fill='%231e6ac9'/%3E%3Crect x='2' y='14' width='10' height='2' fill='%231e6ac9'/%3E%3C/svg%3E") 4 0, pointer;
 }
 
 /* ── Login/register page centering (add this class to <body>) ── */
@@ -126,6 +179,12 @@ input[type="email"] {
   transition: border-color 0.15s, box-shadow 0.15s;
 }
 
+[data-theme="light"] input[type="text"],
+[data-theme="light"] input[type="password"],
+[data-theme="light"] input[type="email"] {
+  background: #fff;
+}
+
 input:focus {
   outline: none;
   border-color: var(--accent);
@@ -192,7 +251,7 @@ button[type="submit"] {
 }
 
 button[type="submit"]:hover:not(:disabled) {
-  background: #00cc33;
+  background: var(--btn-hover);
   box-shadow: 0 0 40px var(--glow);
   transform: scale(1.02);
 }
@@ -223,9 +282,9 @@ button[type="submit"]:disabled {
 
 /* ── Success colour utility ──────────────────────────────── */
 .success {
-  color: #00ff41 !important;
+  color: var(--success) !important;
   font-weight: bold;
-  text-shadow: 0 0 10px #00ff41;
+  text-shadow: 0 0 10px var(--success);
 }
 
 /* ── Browser autofill override ───────────────────────────── */
@@ -238,6 +297,14 @@ input:-webkit-autofill:active {
           box-shadow: 0 0 0px 1000px #000 inset, 0 0 20px var(--glow);
   transition: background-color 5000s ease-in-out 0s;
   caret-color: var(--accent);
+}
+
+[data-theme="light"] input:-webkit-autofill,
+[data-theme="light"] input:-webkit-autofill:hover,
+[data-theme="light"] input:-webkit-autofill:focus,
+[data-theme="light"] input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0px 1000px #fff inset, 0 0 20px var(--glow);
+          box-shadow: 0 0 0px 1000px #fff inset, 0 0 20px var(--glow);
 }
 
 

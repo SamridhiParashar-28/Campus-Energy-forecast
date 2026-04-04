@@ -74,12 +74,42 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // ── Helpers ────────────────────────────────────────────
   function showMessage(text, type = "error") {
-    messageEl.textContent   = text;
-    messageEl.style.color   = type === "success" ? "#00ff41" : "#ff3366";
+    messageEl.innerText     = text;
+    messageEl.style.color   = type === "success" ? "var(--success, #00ff41)" : "var(--danger, #ff3366)";
     messageEl.style.display = "block";
   }
   function clearMessage() {
     messageEl.style.display = "none";
     messageEl.textContent   = "";
+  }
+
+  // ── Custom cursor ─────────────────────────────────────────
+  const cursor    = document.getElementById('cursor');
+  const cursorDot = document.getElementById('cursorDot');
+  if (cursor && cursorDot) {
+    let mx = 0, my = 0, cx = 0, cy = 0;
+    document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
+
+    const animateCursor = () => {
+      cx += (mx - cx) * 0.18;
+      cy += (my - cy) * 0.18;
+      cursor.style.left    = cx + 'px';
+      cursor.style.top     = cy + 'px';
+      cursorDot.style.left = mx + 'px';
+      cursorDot.style.top  = my + 'px';
+      requestAnimationFrame(animateCursor);
+    };
+    animateCursor();
+
+    document.querySelectorAll('a, button, input').forEach(el => {
+      el.addEventListener('mouseenter', () => {
+        cursor.style.opacity = '0';
+        cursorDot.style.opacity = '0';
+      });
+      el.addEventListener('mouseleave', () => {
+        cursor.style.opacity = '1';
+        cursorDot.style.opacity = '1';
+      });
+    });
   }
 });

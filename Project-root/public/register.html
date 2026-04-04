@@ -11,6 +11,15 @@
 </head>
 <!-- auth-page class centres the card via CSS grid -->
 <body class="auth-page">
+  <script>
+    (function(){
+      const theme = localStorage.getItem('ww_theme') || 'light';
+      document.documentElement.setAttribute('data-theme', theme);
+    })();
+  </script>
+
+  <div id="cursor" class="cursor"></div>
+  <div id="cursorDot" class="cursor-dot"></div>
 
   <div class="login-card">
     <div class="header">

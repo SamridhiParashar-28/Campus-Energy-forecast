@@ -13,6 +13,27 @@
   --text3:   #008822;
   --font:    'Share Tech Mono', monospace;
   --head:    'Orbitron', monospace;
+
+  --cursor-border: #00aa33;
+  --cursor-bg: #00ff41;
+}
+
+[data-theme="light"] {
+  --bg:      #e0f0ff;
+  --bg2:     #d0e8ff;
+  --card:    #ffffff;
+  --accent:  #4a9cff;
+  --accent2: #2b7fe6;
+  --accent3: #1e6ac9;
+  --border:  #b8d8ff;
+  --border2: #9bc8ff;
+  --glow:    rgba(74, 156, 255, 0.22);
+  --text:    #0a2a4a;
+  --text2:   #2c446e;
+  --text3:   #4a6a94;
+
+  --cursor-border: #1e6ac9;
+  --cursor-bg: #4a9cff;
 }
 
 /* ── LIGHT THEME - Soft Pastel Blue ── */
@@ -65,24 +86,24 @@ body {
 /* ── Custom cursor ── */
 .cursor {
   width: 12px; height: 12px;
-  border: 1.5px solid #00aa33;
+  border: 1.5px solid var(--cursor-border);
   border-radius: 50%;
   position: fixed;
   pointer-events: none;
   z-index: 99999;
-  transition: transform 0.15s, opacity 0.15s;
+  transition: transform 0.15s, opacity 0.15s, border-color 0.3s;
   transform: translate(-50%, -50%);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.9);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
 }
 .cursor-dot {
   width: 4px; height: 4px;
-  background: #00aa33;
+  background: var(--cursor-bg);
   border-radius: 50%;
   position: fixed;
   pointer-events: none;
   z-index: 99999;
   transform: translate(-50%, -50%);
-  background: var(--accent);
+  transition: background 0.3s;
 }
 
 /* ── Scanlines ── */
@@ -106,7 +127,13 @@ body::after {
 
 /* ── Custom cursor for interactive elements ── */
 a, button, .btn-outline, .btn-solid, .team-github, .nav-links a, .tech-tag {
-cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 16 16' shape-rendering='crispEdges'%3E%3Crect x='5' y='1' width='2' height='2' fill='%23000'/%3E%3Crect x='5' y='3' width='2' height='2' fill='%23000'/%3E%3Crect x='5' y='5' width='2' height='2' fill='%23000'/%3E%3Crect x='5' y='7' width='2' height='2' fill='%23000'/%3E%3Crect x='5' y='9' width='2' height='2' fill='%23000'/%3E%3Crect x='7' y='5' width='2' height='2' fill='%23000'/%3E%3Crect x='7' y='7' width='2' height='2' fill='%23000'/%3E%3Crect x='7' y='9' width='2' height='2' fill='%23000'/%3E%3Crect x='9' y='7' width='2' height='2' fill='%23000'/%3E%3Crect x='9' y='9' width='2' height='2' fill='%23000'/%3E%3Crect x='11' y='7' width='2' height='2' fill='%23000'/%3E%3Crect x='11' y='9' width='2' height='2' fill='%23000'/%3E%3Crect x='3' y='11' width='10' height='2' fill='%23000'/%3E%3Crect x='3' y='13' width='10' height='2' fill='%23000'/%3E%3Crect x='3' y='15' width='10' height='2' fill='%23000'/%3E%3Crect x='4' y='0' width='2' height='2' fill='%2300aa33'/%3E%3Crect x='4' y='2' width='2' height='2' fill='%2300aa33'/%3E%3Crect x='4' y='4' width='2' height='2' fill='%2300aa33'/%3E%3Crect x='4' y='6' width='2' height='2' fill='%2300aa33'/%3E%3Crect x='4' y='8' width='2' height='2' fill='%2300aa33'/%3E%3Crect x='6' y='4' width='2' height='2' fill='%2300aa33'/%3E%3Crect x='6' y='6' width='2' height='2' fill='%2300aa33'/%3E%3Crect x='6' y='8' width='2' height='2' fill='%2300aa33'/%3E%3Crect x='8' y='6' width='2' height='2' fill='%2300aa33'/%3E%3Crect x='8' y='8' width='2' height='2' fill='%2300aa33'/%3E%3Crect x='10' y='6' width='2' height='2' fill='%2300aa33'/%3E%3Crect x='10' y='8' width='2' height='2' fill='%2300aa33'/%3E%3Crect x='2' y='10' width='10' height='2' fill='%2300aa33'/%3E%3Crect x='2' y='12' width='10' height='2' fill='%2300aa33'/%3E%3Crect x='2' y='14' width='10' height='2' fill='%2300aa33'/%3E%3C/svg%3E") 4 0, pointer;
+  cursor: pointer;
+}
+[data-theme="dark"] a, [data-theme="dark"] button, [data-theme="dark"] .btn-outline, [data-theme="dark"] .btn-solid, [data-theme="dark"] .team-github, [data-theme="dark"] .nav-links a, [data-theme="dark"] .tech-tag {
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 16 16' shape-rendering='crispEdges'%3E%3Crect x='5' y='1' width='2' height='2' fill='%23000'/%3E%3Crect x='5' y='3' width='2' height='2' fill='%23000'/%3E%3Crect x='5' y='5' width='2' height='2' fill='%23000'/%3E%3Crect x='5' y='7' width='2' height='2' fill='%23000'/%3E%3Crect x='5' y='9' width='2' height='2' fill='%23000'/%3E%3Crect x='7' y='5' width='2' height='2' fill='%23000'/%3E%3Crect x='7' y='7' width='2' height='2' fill='%23000'/%3E%3Crect x='7' y='9' width='2' height='2' fill='%23000'/%3E%3Crect x='9' y='7' width='2' height='2' fill='%23000'/%3E%3Crect x='9' y='9' width='2' height='2' fill='%23000'/%3E%3Crect x='11' y='7' width='2' height='2' fill='%23000'/%3E%3Crect x='11' y='9' width='2' height='2' fill='%23000'/%3E%3Crect x='3' y='11' width='10' height='2' fill='%23000'/%3E%3Crect x='3' y='13' width='10' height='2' fill='%23000'/%3E%3Crect x='3' y='15' width='10' height='2' fill='%23000'/%3E%3Crect x='4' y='0' width='2' height='2' fill='%2300aa33'/%3E%3Crect x='4' y='2' width='2' height='2' fill='%2300aa33'/%3E%3Crect x='4' y='4' width='2' height='2' fill='%2300aa33'/%3E%3Crect x='4' y='6' width='2' height='2' fill='%2300aa33'/%3E%3Crect x='4' y='8' width='2' height='2' fill='%2300aa33'/%3E%3Crect x='6' y='4' width='2' height='2' fill='%2300aa33'/%3E%3Crect x='6' y='6' width='2' height='2' fill='%2300aa33'/%3E%3Crect x='6' y='8' width='2' height='2' fill='%2300aa33'/%3E%3Crect x='8' y='6' width='2' height='2' fill='%2300aa33'/%3E%3Crect x='8' y='8' width='2' height='2' fill='%2300aa33'/%3E%3Crect x='10' y='6' width='2' height='2' fill='%2300aa33'/%3E%3Crect x='10' y='8' width='2' height='2' fill='%2300aa33'/%3E%3Crect x='2' y='10' width='10' height='2' fill='%2300aa33'/%3E%3Crect x='2' y='12' width='10' height='2' fill='%2300aa33'/%3E%3Crect x='2' y='14' width='10' height='2' fill='%2300aa33'/%3E%3C/svg%3E") 4 0, pointer;
+}
+[data-theme="light"] a, [data-theme="light"] button, [data-theme="light"] .btn-outline, [data-theme="light"] .btn-solid, [data-theme="light"] .team-github, [data-theme="light"] .nav-links a, [data-theme="light"] .tech-tag {
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 16 16' shape-rendering='crispEdges'%3E%3Crect x='5' y='1' width='2' height='2' fill='%23fff'/%3E%3Crect x='5' y='3' width='2' height='2' fill='%23fff'/%3E%3Crect x='5' y='5' width='2' height='2' fill='%23fff'/%3E%3Crect x='5' y='7' width='2' height='2' fill='%23fff'/%3E%3Crect x='5' y='9' width='2' height='2' fill='%23fff'/%3E%3Crect x='7' y='5' width='2' height='2' fill='%23fff'/%3E%3Crect x='7' y='7' width='2' height='2' fill='%23fff'/%3E%3Crect x='7' y='9' width='2' height='2' fill='%23fff'/%3E%3Crect x='9' y='7' width='2' height='2' fill='%23fff'/%3E%3Crect x='9' y='9' width='2' height='2' fill='%23fff'/%3E%3Crect x='11' y='7' width='2' height='2' fill='%23fff'/%3E%3Crect x='11' y='9' width='2' height='2' fill='%23fff'/%3E%3Crect x='3' y='11' width='10' height='2' fill='%23fff'/%3E%3Crect x='3' y='13' width='10' height='2' fill='%23fff'/%3E%3Crect x='3' y='15' width='10' height='2' fill='%23fff'/%3E%3Crect x='4' y='0' width='2' height='2' fill='%231e6ac9'/%3E%3Crect x='4' y='2' width='2' height='2' fill='%231e6ac9'/%3E%3Crect x='4' y='4' width='2' height='2' fill='%231e6ac9'/%3E%3Crect x='4' y='6' width='2' height='2' fill='%231e6ac9'/%3E%3Crect x='4' y='8' width='2' height='2' fill='%231e6ac9'/%3E%3Crect x='6' y='4' width='2' height='2' fill='%231e6ac9'/%3E%3Crect x='6' y='6' width='2' height='2' fill='%231e6ac9'/%3E%3Crect x='6' y='8' width='2' height='2' fill='%231e6ac9'/%3E%3Crect x='8' y='6' width='2' height='2' fill='%231e6ac9'/%3E%3Crect x='8' y='8' width='2' height='2' fill='%231e6ac9'/%3E%3Crect x='10' y='6' width='2' height='2' fill='%231e6ac9'/%3E%3Crect x='10' y='8' width='2' height='2' fill='%231e6ac9'/%3E%3Crect x='2' y='10' width='10' height='2' fill='%231e6ac9'/%3E%3Crect x='2' y='12' width='10' height='2' fill='%231e6ac9'/%3E%3Crect x='2' y='14' width='10' height='2' fill='%231e6ac9'/%3E%3C/svg%3E") 4 0, pointer;
 }
 
 
@@ -119,9 +146,31 @@ nav {
   justify-content: space-between;
   align-items: center;
   padding: 1.2rem 3rem;
-  background: rgba(0,0,0,0.85);
+  background: rgba(var(--bg-rgb, 0,0,0), 0.85);
   border-bottom: 1px solid var(--border);
   backdrop-filter: blur(10px);
+}
+
+.theme-toggle-btn {
+  background: transparent;
+  border: 1px solid var(--border2);
+  color: var(--accent2);
+  padding: 0.5rem;
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.9rem;
+}
+
+.theme-toggle-btn:hover {
+  background: var(--glow);
+  border-color: var(--accent);
+  color: var(--accent);
+  box-shadow: 0 0 12px var(--glow);
 }
 
 .nav-logo {
@@ -201,6 +250,7 @@ nav {
   background: var(--accent2);
   box-shadow: 0 0 24px var(--glow);
   transform: scale(1.03);
+  color: #fff;
 }
 
 /* ── SECTIONS ── */
@@ -240,6 +290,9 @@ section {
   margin-bottom: 1.5rem;
   opacity: 0;
   animation: fadeUp 0.8s 0.4s forwards;
+}
+[data-theme="light"] .hero-title {
+  text-shadow: 0 0 40px var(--glow), 0 0 80px rgba(74, 156, 255, 0.1);
 }
 
 .hero-title span {

@@ -11,9 +11,10 @@ function initMatrix() {
 }
 
 function drawMatrix() {
-  ctx.fillStyle = 'rgba(0,0,0,0.05)';
+  const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+  ctx.fillStyle = isLight ? 'rgba(224,240,255,0.15)' : 'rgba(0,0,0,0.05)';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = '#00ff41';
+  ctx.fillStyle = isLight ? '#4a9cff' : '#00ff41';
   ctx.font = '14px Share Tech Mono';
   drops.forEach((y, i) => {
     const char = String.fromCharCode(0x30A0 + Math.random() * 96);
@@ -26,6 +27,36 @@ function drawMatrix() {
 initMatrix();
 window.addEventListener('resize', initMatrix);
 setInterval(drawMatrix, 60);
+
+// ── Theme Management ─────────────────────────────────────
+const THEME_KEY = 'ww_theme';
+
+function initTheme() {
+  const saved = localStorage.getItem(THEME_KEY) || 'light';
+  document.documentElement.setAttribute('data-theme', saved);
+  updateThemeIcon(saved);
+}
+
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme') || 'dark';
+  const next    = current === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem(THEME_KEY, next);
+  updateThemeIcon(next);
+}
+
+function updateThemeIcon(theme) {
+  const btn = document.getElementById('themeToggleBtn');
+  if (btn) {
+    btn.innerHTML = theme === 'light' 
+      ? '<i class="fas fa-moon"></i>' 
+      : '<i class="fas fa-sun"></i>';
+  }
+}
+
+initTheme();
+const themeBtn = document.getElementById('themeToggleBtn');
+if (themeBtn) themeBtn.addEventListener('click', toggleTheme);
 
 // ── Custom cursor ─────────────────────────────────────────
 const cursor    = document.getElementById('cursor');
