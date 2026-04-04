@@ -296,7 +296,7 @@
   <div class="topbar">
     <div class="topbar-left">
       <h2>LSTM FORECAST DASHBOARD</h2>
-      <p>LSTM + XGBoost hybrid • Next-day block predictions</p>
+      <p>LSTM + XGBoost hybrid • Multi-day block predictions</p>
     </div>
     <div class="topbar-right">
       <span><span class="status-dot"></span>Model Ready</span>
@@ -418,17 +418,20 @@
 
 <script src="../js/shared.js"></script>
 <script>
-const API_BASE = 'http://localhost:5000';
+const API_BASE = 'http://127.0.0.1:5000';
 let forecastData = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
   initSidebar('lstm_dashboard');
 
   // Set tomorrow's date
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  document.getElementById('predDateLabel').textContent =
-    tomorrow.toLocaleDateString('en-IN', { dateStyle: 'medium' });
+  const start = new Date();
+  start.setDate(start.getDate() + 1);
+  const end = new Date();
+  end.setDate(end.getDate() + 7);
+  document.getElementById('predDateLabel').textContent = 
+    start.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) + ' – ' +
+    end.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 
   buildStaticCharts();
   await loadModelInfo();
@@ -496,7 +499,7 @@ async function runForecast() {
   }
 
   try {
-    const res = await fetch(`${API_BASE}/forecast/predict?days=1`, {
+    const res = await fetch(`${API_BASE}/forecast/predict?days=7`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
       body: JSON.stringify({ dataset: decryptedPayload })
@@ -561,29 +564,85 @@ function buildForecastCards(blocks) {
 }
 
 function buildPredTable(blocks) {
-  let rows = Object.values(blocks).map(b => {
-    const err = b.errorPct;
-    const cls = err < 4 ? 'err-low' : err < 7 ? 'err-mid' : 'err-high';
-    return `<tr>
-      <td style="color:var(--text3)">${new Date().toLocaleDateString('en-IN',{dateStyle:'medium'})}</td>
-      <td style="color:var(--accent2)">${b.label}</td>
-      <td>${b.actual}</td>
-      <td style="color:var(--accent)">${b.predicted}</td>
-      <td><span class="err-pill ${cls}">${err}%</span></td>
-      <td>
-        <div style="display:flex;align-items:center;gap:6px">
-          <div style="flex:1;height:3px;background:var(--bg3);border-radius:2px">
-            <div style="width:${Math.min(b.confidence,100)}%;height:100%;background:var(--accent3);border-radius:2px"></div>
+  let rows = [];
+  Object.values(blocks).forEach(b => {
+    b.forecast.forEach(f => {
+      const err = +(Math.abs(f.actual - f.predicted) / f.actual * 100).toFixed(1);
+      const cls = err < 4 ? 'err-low' : err < 7 ? 'err-mid' : 'err-high';
+      rows.push(`<tr>
+        <td style="color:var(--text3)">${new Date(f.date).toLocaleDateString('en-IN',{dateStyle:'medium'})}</td>
+        <td style="color:var(--accent2)">${b.label}</td>
+        <td>${f.actual}</td>
+        <td style="color:var(--accent)">${f.predicted}</td>
+        <td><span class="err-pill ${cls}">${err}%</span></td>
+        <td>
+          <div style="display:flex;align-items:center;gap:6px">
+            <div style="flex:1;height:3px;background:var(--bg3);border-radius:2px">
+              <div style="width:${Math.min(f.confidence,100)}%;height:100%;background:var(--accent3);border-radius:2px"></div>
+            </div>
+            <span style="font-size:0.6rem;color:var(--text3)">${f.confidence}%</span>
           </div>
-          <span style="font-size:0.6rem;color:var(--text3)">${b.confidence}%</span>
-        </div>
-      </td>
-    </tr>`;
-  }).join('');
+        </td>
+      </tr>`);
+    });
+  });
 
-  if (!rows) rows = `<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:1.5rem 0">Run forecast to populate table</td></tr>`;
+  if (rows.length === 0) {
+    document.getElementById('predTableBody').innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:1.5rem 0">Run forecast to populate table</td></tr>`;
+  } else {
+    document.getElementById('predTableBody').innerHTML = rows.join('');
+  }
 
-  document.getElementById('predTableBody').innerHTML = rows;
+  // Update chart with real data if available
+  updateChartWithRealData(blocks);
+}
+
+let actualVsPredChartInstance = null;
+
+function updateChartWithRealData(blocks) {
+  const ctx = document.getElementById('actualVsPredChart').getContext('2d');
+  const labels = [];
+  
+  // Get all dates from first block's forecast
+  const firstBlock = Object.values(blocks)[0];
+  if (firstBlock) {
+     firstBlock.forecast.forEach(f => labels.push(new Date(f.date).toLocaleDateString('en-IN', {day:'numeric', month:'short'})));
+  }
+
+  const datasets = [];
+  Object.values(blocks).forEach(b => {
+    const actual    = b.forecast.map(f => f.actual);
+    const predicted = b.forecast.map(f => f.predicted);
+    const color     = getBlockColor(b.blockKey);
+
+    datasets.push({
+      label: b.label + ' Actual',
+      data: actual,
+      borderColor: color,
+      backgroundColor: 'transparent',
+      tension: 0.35,
+      borderWidth: 2.5,
+      pointRadius: 3
+    });
+    datasets.push({
+      label: b.label + ' Predicted',
+      data: predicted,
+      borderColor: color,
+      backgroundColor: 'transparent',
+      tension: 0.35,
+      borderWidth: 1.5,
+      borderDash: [4, 3],
+      pointRadius: 2
+    });
+  });
+
+  if (actualVsPredChartInstance) actualVsPredChartInstance.destroy();
+  
+  actualVsPredChartInstance = new Chart(ctx, {
+    type: 'line',
+    data: { labels, datasets },
+    options: JSON.parse(JSON.stringify(CHART_DEFAULTS))
+  });
 }
 
 async function loadHistory() {
