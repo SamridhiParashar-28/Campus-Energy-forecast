@@ -51,7 +51,10 @@ if (prefill) {
       const data = await res.json();
 
       if (res.ok && data.success) {
+        // Preserve browser-local theme preference across the session reset
+        const savedTheme = localStorage.getItem('ww_theme');
         localStorage.clear();
+        if (savedTheme) localStorage.setItem('ww_theme', savedTheme);
         localStorage.setItem("isLoggedIn", "true");
         localStorage.setItem("username",   data.username);
         localStorage.setItem("token",      data.token);

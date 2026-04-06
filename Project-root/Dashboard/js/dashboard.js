@@ -26,7 +26,9 @@ document.addEventListener("DOMContentLoaded", () => {
   if (logoutBtn) {
     logoutBtn.addEventListener("click", (e) => {
       e.preventDefault();
+      const savedTheme = localStorage.getItem('ww_theme');
       localStorage.clear();
+      if (savedTheme) localStorage.setItem('ww_theme', savedTheme);
       window.location.replace("../wecomepage/welcome.html");
     });
   }

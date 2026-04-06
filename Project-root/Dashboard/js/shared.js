@@ -37,7 +37,7 @@ document.addEventListener('DOMContentLoaded', () => {
 const THEME_KEY = 'ww_theme';
 
 function initTheme() {
-  const saved = localStorage.getItem(THEME_KEY) || 'light';
+  const saved = localStorage.getItem(THEME_KEY) || 'dark';
   document.documentElement.setAttribute('data-theme', saved);
 }
 initTheme(); // run immediately to prevent flash
@@ -321,7 +321,9 @@ function initSidebar(activeId) {
   const logoutBtn = document.getElementById('logoutBtn');
   if (logoutBtn) {
     logoutBtn.addEventListener('click', () => {
+      const savedTheme = localStorage.getItem(THEME_KEY);
       localStorage.clear();
+      if (savedTheme) localStorage.setItem(THEME_KEY, savedTheme);
       window.location.replace(getWelcomePage());
     });
   }
